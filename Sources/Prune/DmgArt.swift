@@ -68,9 +68,5 @@ enum DmgArt {
         ctx.addLine(to: CGPoint(x: x1, y: y))
         ctx.addLine(to: CGPoint(x: x1 - 14, y: y - 9))
         ctx.strokePath()
-
-        // Footer hint for people who see Apple's "can't be opened" warning.
-        text(tr("First launch: right-click Prune › Open, or System Settings › Privacy & Security › Open Anyway."),
-             size: 10.5, weight: .regular, color: NSColor(hex: 0x8F8F8F), y: 52)
     }
 }

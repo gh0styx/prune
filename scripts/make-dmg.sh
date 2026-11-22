@@ -8,8 +8,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-./scripts/build-app.sh
-APP=build/Prune.app
+# PRUNE_APP=/path/to/Prune.app uses an already signed (and notarized) app, e.g. exported from Xcode,
+# instead of building and signing one here.
+if [ -n "${PRUNE_APP:-}" ]; then
+  APP="$PRUNE_APP"
+else
+  ./scripts/build-app.sh
+  APP=build/Prune.app
+fi
 VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist")
 # DMG_LANG=ru gives a Russian installer window (background text and the Applications link name).
 DMG_LANG="${DMG_LANG:-en}"
@@ -29,20 +35,24 @@ SIGN_ID="${SIGN_ID:-$(security find-identity -v -p codesigning 2>/dev/null \
 IS_DEVELOPER_ID=$(security find-identity -v -p codesigning 2>/dev/null | grep -q "$SIGN_ID.*Developer ID" && echo yes || echo no)
 
 # Developer ID builds get the hardened runtime and a secure timestamp, which notarization requires.
-if [ "$IS_DEVELOPER_ID" = yes ]; then
+if [ "$IS_DEVELOPER_ID" = yes ] && [ -z "${PRUNE_APP:-}" ]; then
   codesign --force --options runtime --timestamp --sign "$SIGN_ID" "$APP"
 fi
+
+# The background is rendered by a fresh build, so it stays current when PRUNE_APP is an older export.
+swift build -c release >/dev/null
+BG_BIN="$(swift build -c release --show-bin-path)/Prune"
 
 # Stage: the app, a link to /Applications, the background and the volume icon.
 rm -rf "$STAGE" "$RW" "$DMG"
 mkdir -p "$STAGE/.background"
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/$APPS_NAME"
-"$APP/Contents/MacOS/Prune" --render-dmg-background "$STAGE/.background" ${LANG_ARGS[@]+"${LANG_ARGS[@]}"}
+"$BG_BIN" --render-dmg-background "$STAGE/.background" ${LANG_ARGS[@]+"${LANG_ARGS[@]}"}
 tiffutil -cathidpicheck "$STAGE/.background/background.png" "$STAGE/.background/background@2x.png" \
   -out "$STAGE/.background/background.tiff" >/dev/null 2>&1
 rm "$STAGE/.background/"background*.png
-cp build/icon/AppIcon.icns "$STAGE/.VolumeIcon.icns"
+cp "$APP/Contents/Resources/AppIcon.icns" "$STAGE/.VolumeIcon.icns"
 
 hdiutil create -volname "$VOL" -srcfolder "$STAGE" -fs HFS+ -format UDRW -ov "$RW" >/dev/null
 # Detach any stale mount with the same name first.
