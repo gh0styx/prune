@@ -351,8 +351,8 @@ struct SidebarResizeHandle: View {
     }
 }
 
-/// Window chrome: opaque canvas-colored window background and a visible titlebar separator,
-/// so the window edge and the traffic lights never dissolve into the desktop.
+/// Window chrome: a transparent window, so the sidebar's native vibrancy can blend with the desktop
+/// (the detail area paints its own canvas color), and no titlebar separator line.
 struct WindowChrome: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let v = NSView()
@@ -363,9 +363,8 @@ struct WindowChrome: NSViewRepresentable {
 
     static func apply(_ w: NSWindow?) {
         guard let w else { return }
-        w.backgroundColor = NSColor(name: nil) { ap in
-            ap.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(hex: 0x191919) : NSColor(hex: 0xFAFAFA)
-        }
+        w.isOpaque = false
+        w.backgroundColor = .clear
         w.titlebarSeparatorStyle = .none
     }
 }

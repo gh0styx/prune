@@ -496,8 +496,13 @@ struct ReadyView: View {
                 .appear(1.0)
 
             HStack(spacing: 10) {
-                Button("Scan") { store.scan() }
-                    .buttonStyle(PruneButtonStyle(kind: .primary, height: 38))
+                Button { store.scan() } label: {
+                    Label("Scan", systemImage: "magnifyingglass")
+                        .font(Theme.sans(15, .semibold))
+                        .padding(.horizontal, 6)
+                }
+                .buttonStyle(PruneButtonStyle(kind: .primary, height: 44))
+                .help("⌘R")
             }
             .padding(.top, 26)
             .appear(1.1)

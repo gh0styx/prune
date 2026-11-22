@@ -19,9 +19,6 @@ extension Color {
 /// Geist-like tokens: dark-gray canvas (like Claude/Codex), hairline borders, one accent per meaning.
 enum Theme {
     static let bg = Color.dynamic(0xFAFAFA, 0x191919)
-    /// Sidebar tint laid over the vibrancy: keeps the sidebar (and the traffic lights on it) clearly
-    /// separate from the canvas whatever sits behind the window.
-    static let sidebarTint = Color.dynamic(0xDDDDE0, 0x303033)
     static let sidebarEdge = Color.dynamic(0xBFBFC4, 0x4A4A4F)
     static let card = Color.dynamic(0xFFFFFF, 0x212121)
     static let border = Color.dynamic(0xEAEAEA, 0x2E2E2E)

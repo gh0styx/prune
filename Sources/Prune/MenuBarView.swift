@@ -28,7 +28,7 @@ struct MenuBarView: View {
                     VStack(spacing: 0) {
                         Text("\(Int((store.disk.usedFraction * 100).rounded()))%")
                             .font(Theme.sans(15, .semibold)).monospacedDigit().foregroundStyle(Theme.text)
-                        Text("used").font(Theme.sans(9.5)).foregroundStyle(Theme.faint)
+                        Text("used").font(Theme.sans(9.5)).foregroundStyle(.secondary)
                     }
                 }
                 .frame(width: 64, height: 64)
@@ -36,7 +36,7 @@ struct MenuBarView: View {
                     Text(store.volumes.first?.name ?? "Macintosh HD")
                         .font(Theme.sans(14, .semibold)).foregroundStyle(Theme.text)
                     Text(trf("%@ free of %@", Fmt.bytes(store.disk.free), Fmt.bytes(store.disk.total)))
-                        .font(Theme.sans(12)).foregroundStyle(Theme.muted)
+                        .font(Theme.sans(12)).foregroundStyle(.secondary)
                     status.padding(.top, 2)
                 }
                 Spacer(minLength: 0)
@@ -75,7 +75,7 @@ struct MenuBarView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("No scan yet").font(Theme.sans(12.5, .semibold)).foregroundStyle(Theme.text)
                             Text("Run a scan to see what you can clean.")
-                                .font(Theme.sans(11.5)).foregroundStyle(Theme.muted)
+                                .font(Theme.sans(11.5)).foregroundStyle(.secondary)
                         }
                         Spacer()
                     }
@@ -103,7 +103,7 @@ struct MenuBarView: View {
                                         } else {
                                             Text(Fmt.bytes(store.size(c)))
                                                 .font(Theme.mono(11.5))
-                                                .foregroundStyle(Theme.muted)
+                                                .foregroundStyle(.secondary)
                                                 .contentTransition(.numericText())
                                         }
                                     }
@@ -164,10 +164,10 @@ struct MenuBarView: View {
         if store.isScanning {
             HStack(spacing: 6) {
                 Spinner(size: 10)
-                Text("Scanning…").font(Theme.sans(11)).foregroundStyle(Theme.muted)
+                Text("Scanning…").font(Theme.sans(11)).foregroundStyle(.secondary)
             }
         } else if let last = store.lastScan {
-            Text(trf("Updated %@", Fmt.relative(last))).font(Theme.sans(11)).foregroundStyle(Theme.faint)
+            Text(trf("Updated %@", Fmt.relative(last))).font(Theme.sans(11)).foregroundStyle(.secondary)
         }
     }
 }
@@ -176,12 +176,12 @@ private struct DiskLine: View {
     let disk: DiskInfo
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "internaldrive").font(.system(size: 10)).foregroundStyle(Theme.faint)
+            Image(systemName: "internaldrive").font(.system(size: 10)).foregroundStyle(.secondary)
             Text(trf("%@ free of %@", Fmt.bytes(disk.free), Fmt.bytes(disk.total)))
-                .font(Theme.sans(11)).foregroundStyle(Theme.faint)
+                .font(Theme.sans(11)).foregroundStyle(.secondary)
             Spacer()
             Text(trf("%lld%% used", Int((disk.usedFraction * 100).rounded())))
-                .font(Theme.mono(10.5)).foregroundStyle(Theme.faint)
+                .font(Theme.mono(10.5)).foregroundStyle(.secondary)
         }
     }
 }
@@ -224,20 +224,22 @@ private struct StatTile: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: symbol).font(.system(size: 10, weight: .semibold)).foregroundStyle(color)
-                Text(tr(label)).font(Theme.sans(11)).foregroundStyle(Theme.faint).lineLimit(1)
+                Text(tr(label)).font(Theme.sans(11)).foregroundStyle(.secondary).lineLimit(1)
             }
             Text(value)
                 .font(Theme.sans(15, .semibold))
                 .monospacedDigit()
-                .foregroundStyle(dim ? Theme.faint : Theme.text)
+                .foregroundStyle(dim ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .contentTransition(.numericText())
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.text.opacity(hovering && action != nil ? 0.08 : 0.05),
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        // Near-opaque card so the text stays readable over any wallpaper, in both appearances.
+        .background(Theme.card.opacity(0.9), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(Theme.text.opacity(hovering && action != nil ? 0.06 : 0)))
         .contentShape(Rectangle())
         .onTapGesture { action?() }
         .onHover { hovering = $0 }

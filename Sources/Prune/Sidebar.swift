@@ -15,6 +15,28 @@ struct VisualEffect: NSViewRepresentable {
     func updateNSView(_ v: NSVisualEffectView, context: Context) { v.material = material }
 }
 
+/// Real Liquid Glass (NSGlassEffectView) on macOS 26+; the sidebar vibrancy material before that.
+struct SidebarGlass: View {
+    var body: some View {
+        if #available(macOS 26.0, *) {
+            GlassSurface()
+        } else {
+            VisualEffect(material: .sidebar)
+        }
+    }
+}
+
+@available(macOS 26.0, *)
+private struct GlassSurface: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSGlassEffectView {
+        let v = NSGlassEffectView()
+        v.style = .regular
+        return v
+    }
+
+    func updateNSView(_ v: NSGlassEffectView, context: Context) {}
+}
+
 struct Sidebar: View {
     @Environment(Store.self) private var store
     @Namespace private var ns
@@ -94,12 +116,11 @@ struct Sidebar: View {
         .padding(.horizontal, 8)
         .frame(width: store.sidebarWidth)
         .frame(maxHeight: .infinity)
+        // Liquid Glass on macOS 26+, the native sidebar material before that. No opaque tint on top,
+        // so the wallpaper and windows behind the app show through.
         .background {
-            ZStack {
-                VisualEffect()
-                Theme.sidebarTint.opacity(0.78)
-            }
-            .ignoresSafeArea()
+            SidebarGlass()
+                .ignoresSafeArea()
         }
     }
 
