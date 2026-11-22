@@ -498,3 +498,4 @@
 "A scan needs Full Disk Access. Without it macOS hides Mail, Messages, Safari data and some caches, and the results would be incomplete." = "Для сканирования нужен полный доступ к диску. Без него macOS скрывает Почту, Сообщения, данные Safari и часть кэшей, и результат будет неполным.";
 "Prune checks again when you return to the app." = "Prune проверит доступ снова, когда вы вернётесь в приложение.";
 "Start scan" = "Начать сканирование";
+"Check for Updates…" = "Проверить обновления…";

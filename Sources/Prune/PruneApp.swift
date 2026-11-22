@@ -27,6 +27,11 @@ enum Entry {
 
 struct PruneApp: App {
     @State private var store = Store()
+
+    init() {
+        // Start Sparkle at launch so scheduled update checks run from the first session.
+        _ = AppUpdater.shared
+    }
     @AppStorage(Prefs.Key.appearance) private var appearance = "dark"
     @AppStorage(Prefs.Key.showMenuBar) private var showMenuBar = true
 
@@ -60,6 +65,9 @@ struct PruneApp: App {
                     .keyboardShortcut("r")
                 Button("Full scan") { store.fullScan() }
                     .keyboardShortcut("r", modifiers: [.command, .shift])
+            }
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesButton()
             }
             CommandGroup(replacing: .appSettings) {
                 OpenSettingsButton()

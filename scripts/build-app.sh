@@ -21,6 +21,9 @@ APP=build/Prune.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Prune"
+# Sparkle (auto-updates) is a dynamic framework; Package.swift adds the @executable_path/../Frameworks rpath.
+mkdir -p "$APP/Contents/Frameworks"
+ditto "$(swift build -c release --show-bin-path)/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp "$ICON_DIR/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cp "$ICON_DIR/car/Assets.car" "$APP/Contents/Resources/Assets.car"
@@ -30,7 +33,19 @@ cp -R Resources/en.lproj Resources/ru.lproj "$APP/Contents/Resources/"
 # ad-hoc signatures change every build, so macOS asks again each time.
 SIGN_ID="${PRUNE_SIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null \
   | awk '/Apple Development|Developer ID Application/ {print $2; exit}')}"
-codesign --force --sign "${SIGN_ID:--}" "$APP" >/dev/null
+# Nested code first (Sparkle's XPC services, Autoupdate and Updater.app, then the framework, then the app).
+# Developer ID builds get the hardened runtime and a secure timestamp, which notarization requires.
+CODESIGN_OPTS=()
+if [ -n "$SIGN_ID" ] && security find-identity -v -p codesigning 2>/dev/null | grep "$SIGN_ID" | grep -q "Developer ID"; then
+  CODESIGN_OPTS=(--options runtime --timestamp)
+fi
+sign_code() { codesign --force --sign "${SIGN_ID:--}" ${CODESIGN_OPTS[@]+"${CODESIGN_OPTS[@]}"} "$1" >/dev/null; }
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
+for item in "$SPARKLE"/XPCServices/*.xpc "$SPARKLE/Autoupdate" "$SPARKLE/Updater.app"; do
+  [ -e "$item" ] && sign_code "$item"
+done
+sign_code "$APP/Contents/Frameworks/Sparkle.framework"
+sign_code "$APP"
 if [ -n "$SIGN_ID" ]; then echo "Signed with a stable identity"; else echo "Signed ad-hoc (no identity found)"; fi
 
 echo "Built $APP"
