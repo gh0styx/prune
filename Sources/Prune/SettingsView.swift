@@ -175,7 +175,7 @@ private struct GeneralSettings: View {
                         Button("Restart") { Lang.relaunch() }.buttonStyle(PruneButtonStyle(kind: .primary, height: 26))
                     }
                     Segmented(selection: Binding(get: { language }, set: { language = $0; languageChanged = true }),
-                              options: [("system", "Match system"), ("ru", "Русский"), ("en", "English")])
+                              options: [("system", "Match system"), ("ru", "Русский"), ("uk", "Українська"), ("en", "English")])
                 }
             }
         }

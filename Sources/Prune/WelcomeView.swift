@@ -77,13 +77,13 @@ struct WelcomeView: View {
         .overlay(alignment: .topTrailing) {
             // Switch language right away, before reading anything.
             Segmented(selection: Binding(
-                get: { Lang.code.hasPrefix("ru") ? "ru" : "en" },
+                get: { Lang.code.hasPrefix("uk") ? "uk" : Lang.code.hasPrefix("ru") ? "ru" : "en" },
                 set: { new in
                     guard !Lang.code.hasPrefix(new) else { return }
                     Prefs.set(new, Prefs.Key.language)
                     Lang.relaunch()
                 }),
-                options: [("en", "English"), ("ru", "Русский")])
+                options: [("en", "English"), ("ru", "Русский"), ("uk", "Українська")])
             .padding(.top, 14)
             .padding(.trailing, 18)
         }

@@ -25,7 +25,7 @@ enum Lang {
         NSApp.terminate(nil)
     }
 
-    /// Applies the language picked in Settings ("system", "en", "ru") before the UI starts.
+    /// Applies the language picked in Settings ("system", "en", "ru", "uk") before the UI starts.
     static func applyOverride() {
         let choice = UserDefaults.standard.string(forKey: Prefs.Key.language) ?? "system"
         if choice == "system" {
@@ -36,25 +36,25 @@ enum Lang {
     }
 }
 
-/// "5 items" with the right plural form for the UI language (Russian has three).
+/// "5 items" with the right plural form for the UI language (Russian and Ukrainian have three).
 enum Noun: String {
     case item, file, app, staleProject, smallerItem
 
-    var forms: (en: (String, String), ru: (String, String, String)) {
+    var forms: (en: (String, String), ru: (String, String, String), uk: (String, String, String)) {
         switch self {
-        case .item: (("item", "items"), ("элемент", "элемента", "элементов"))
-        case .file: (("file", "files"), ("файл", "файла", "файлов"))
-        case .app: (("app", "apps"), ("приложение", "приложения", "приложений"))
-        case .staleProject: (("stale project", "stale projects"), ("заброшенный проект", "заброшенных проекта", "заброшенных проектов"))
-        case .smallerItem: (("smaller item", "smaller items"), ("мелкий элемент", "мелких элемента", "мелких элементов"))
+        case .item: (("item", "items"), ("элемент", "элемента", "элементов"), ("елемент", "елементи", "елементів"))
+        case .file: (("file", "files"), ("файл", "файла", "файлов"), ("файл", "файли", "файлів"))
+        case .app: (("app", "apps"), ("приложение", "приложения", "приложений"), ("програма", "програми", "програм"))
+        case .staleProject: (("stale project", "stale projects"), ("заброшенный проект", "заброшенных проекта", "заброшенных проектов"), ("занедбаний проєкт", "занедбані проєкти", "занедбаних проєктів"))
+        case .smallerItem: (("smaller item", "smaller items"), ("мелкий элемент", "мелких элемента", "мелких элементов"), ("дрібний елемент", "дрібні елементи", "дрібних елементів"))
         }
     }
 }
 
 func plural(_ n: Int, _ noun: Noun) -> String {
     let number = n.formatted(.number.locale(Lang.locale))
-    if Lang.code.hasPrefix("ru") {
-        let f = noun.forms.ru
+    if Lang.code.hasPrefix("ru") || Lang.code.hasPrefix("uk") {
+        let f = Lang.code.hasPrefix("uk") ? noun.forms.uk : noun.forms.ru
         let mod10 = n % 10, mod100 = n % 100
         let word = (mod10 == 1 && mod100 != 11) ? f.0 : ((2...4).contains(mod10) && !(12...14).contains(mod100)) ? f.1 : f.2
         return "\(number) \(word)"

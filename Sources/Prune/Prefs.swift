@@ -14,7 +14,7 @@ enum Prefs {
         static let useDefaultFolders = "useDefaultFolders"
         static let extraFolders = "extraFolders"
         static let ignoredPaths = "ignoredPaths"
-        static let language = "language"        // "system" | "en" | "ru"
+        static let language = "language"        // "system" | "en" | "ru" | "uk"
         static let notifications = "notifications"
         static let schedule = "schedule"          // "off" | "daily" | "weekly"
         static let lastScheduledScan = "lastScheduledScan"

@@ -28,7 +28,7 @@ cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp "$ICON_DIR/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cp "$ICON_DIR/car/Assets.car" "$APP/Contents/Resources/Assets.car"
 # Localizations (English source, Russian translation).
-cp -R Resources/en.lproj Resources/ru.lproj "$APP/Contents/Resources/"
+cp -R Resources/en.lproj Resources/ru.lproj Resources/uk.lproj "$APP/Contents/Resources/"
 # A stable identity keeps macOS privacy grants (Documents, Full Disk Access) across rebuilds;
 # ad-hoc signatures change every build, so macOS asks again each time.
 SIGN_ID="${PRUNE_SIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null \
