@@ -1,10 +1,13 @@
-import AppKit
+import Foundation
+import CoreServices
 import Darwin
 
 /// Finds reclaimable files. Everything here is synchronous and meant to run off the main thread.
 struct Scanner: Sendable {
     /// Optional live feedback for the scan screen (folders visited, current path).
     var progress: ScanProgress? = nil
+    /// Folders to search for projects instead of the Settings choice (the CLI sets this from --root).
+    var projectRootOverride: [URL]? = nil
 
     static var staleAfter: TimeInterval { TimeInterval(Prefs.staleDays) * 60 * 60 * 24 }
 
@@ -26,6 +29,9 @@ struct Scanner: Sendable {
     ]
 
     func projectRoots() -> [URL] {
+        if let override = projectRootOverride {
+            return override.filter { FileManager.default.fileExists(atPath: $0.path) }
+        }
         var seen = Set<String>()
         var roots: [URL] = []
         let candidates = (Prefs.useDefaultFolders ? Self.defaultRootNames.map { home.appending(path: $0) } : [])
@@ -263,7 +269,8 @@ struct Scanner: Sendable {
 
     private func appName(for bundleID: String) -> String {
         guard bundleID.contains("."),
-              let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return bundleID }
+              let app = (LSCopyApplicationURLsForBundleIdentifier(bundleID as CFString, nil)?
+                  .takeRetainedValue() as? [URL])?.first else { return bundleID }
         return FileManager.default.displayName(atPath: app.path).replacingOccurrences(of: ".app", with: "")
     }
 }

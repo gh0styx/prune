@@ -1,4 +1,4 @@
-import AppKit
+import Foundation
 
 /// Translates an English UI string through the app's Localizable.strings (ru.lproj, …).
 /// Missing keys fall back to the English text, so untranslated strings still read fine.
@@ -15,15 +15,6 @@ enum Lang {
     /// The language the UI actually uses (first match between the user's choice and our localizations).
     static var code: String { Bundle.main.preferredLocalizations.first ?? "en" }
     static var locale: Locale { Locale(identifier: code) }
-
-    /// Starts a fresh copy of Prune and quits this one, so a new language applies everywhere.
-    static func relaunch() {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        p.arguments = ["-n", Bundle.main.bundlePath]
-        try? p.run()
-        NSApp.terminate(nil)
-    }
 
     /// Applies the language picked in Settings ("system", "en", "ru", "uk") before the UI starts.
     static func applyOverride() {

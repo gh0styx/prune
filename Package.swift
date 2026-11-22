@@ -13,7 +13,8 @@ let package = Package(
             dependencies: [
                 .product(name: "Sparkle", package: "Sparkle")
             ],
-            path: "Sources/Prune",
+            path: "Sources",
+            sources: ["Prune", "PruneCore"],
             swiftSettings: [.swiftLanguageMode(.v5)],
             // Sparkle.framework sits next to the binary in .build and in Contents/Frameworks inside the app.
             linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path",

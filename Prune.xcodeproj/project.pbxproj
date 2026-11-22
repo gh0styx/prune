@@ -30,6 +30,11 @@
 			path = Sources/Prune;
 			sourceTree = "<group>";
 		};
+		A00000000000000000000013 /* Sources/PruneCore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources/PruneCore;
+			sourceTree = "<group>";
+		};
 		A00000000000000000000012 /* Resources */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -56,6 +61,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000011 /* Sources/Prune */,
+				A00000000000000000000013 /* Sources/PruneCore */,
 				A00000000000000000000012 /* Resources */,
 				A00000000000000000000041 /* Products */,
 			);
@@ -86,6 +92,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A00000000000000000000011 /* Sources/Prune */,
+				A00000000000000000000013 /* Sources/PruneCore */,
 				A00000000000000000000012 /* Resources */,
 			);
 			name = Prune;

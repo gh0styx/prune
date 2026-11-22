@@ -150,17 +150,7 @@ final class Store {
                 apply([.docker], result.items)
             }
         }
-        let allJobs: [([CategoryID], @Sendable () -> [CleanItem])] = [
-            ([.nodeModules, .buildArtifacts], { scanner.scanProjects() }),
-            ([.xcode], { scanner.scanXcode() + scanner.scanUnavailableSimulators() }),
-            ([.downloads], { scanner.scanDownloads() }),
-            ([.iosBackups], { scanner.scanIOSBackups() }),
-            ([.mailAttachments], { scanner.scanMailAttachments() }),
-            ([.packageCaches], { scanner.scanPackageCaches() }),
-            ([.appCaches], { scanner.scanAppCaches() }),
-            ([.messengerCaches], { scanner.scanMessengerCaches() }),
-            ([.logs], { scanner.scanLogs() }),
-        ]
+        let allJobs = Catalog.jobs(scanner: scanner)
         let jobs = allJobs.filter { cats, _ in cats.contains { visible.contains($0) } }
         Task {
             await withTaskGroup(of: ([CategoryID], [CleanItem]).self) { group in

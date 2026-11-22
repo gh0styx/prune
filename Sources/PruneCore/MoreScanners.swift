@@ -1,4 +1,4 @@
-import AppKit
+import Foundation
 
 // MARK: Downloads, iPhone backups, simulators
 
