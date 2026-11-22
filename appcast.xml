@@ -1,0 +1,15 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Prune</title>
+        <item>
+            <title>0.1.1</title>
+            <pubDate>Sun, 22 Nov 2026 14:15:41 +0200</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>0.1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/gh0styx/prune/releases/download/v0.1.1/Prune-0.1.1.dmg" length="4971987" type="application/octet-stream" sparkle:edSignature="VazialO//IXB9jWEAE/46ni5D9ks4R3qO+Dlu74IRxRC8CMBq5weDEiMeXvNeuivU/8e3QxVcOwMGjKoDr/bCQ=="/>
+        </item>
+    </channel>
+</rss>
