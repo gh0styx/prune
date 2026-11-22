@@ -1,0 +1,16 @@
+.build/
+build/
+DerivedData/
+.DS_Store
+*.xcodeproj/xcuserdata
+.swiftpm/
+*.dmg
+.env*
+*.p12
+*.pem
+*.key
+*.cer
+*.mobileprovision
+.claude/
+.scratch*/
+scratch/

@@ -1,0 +1,3 @@
+"NSDocumentsFolderUsageDescription" = "Prune ищет node_modules и папки сборок в ваших проектах.";
+"NSDesktopFolderUsageDescription" = "Prune ищет node_modules и папки сборок в ваших проектах.";
+"NSDownloadsFolderUsageDescription" = "Prune ищет в Загрузках старые установщики и файлы, которые вы больше не используете.";
