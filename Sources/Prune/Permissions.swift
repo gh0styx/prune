@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// What a scan was asked for while permissions were missing.
-enum GatedAction { case quick, full, map }
+enum GatedAction { case scan, map }
 
 /// Everything the scans need from macOS. Full Disk Access also covers Documents, Desktop,
 /// Downloads, Mail and Messages, so it is the only one to check.

@@ -61,10 +61,8 @@ struct PruneApp: App {
         .defaultSize(width: 1120, height: 740)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Quick scan") { store.scan() }
+                Button("Scan") { store.scan() }
                     .keyboardShortcut("r")
-                Button("Full scan") { store.fullScan() }
-                    .keyboardShortcut("r", modifiers: [.command, .shift])
             }
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesButton()

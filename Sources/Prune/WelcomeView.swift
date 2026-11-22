@@ -76,7 +76,7 @@ struct WelcomeView: View {
         }
         .overlay(alignment: .topTrailing) {
             // Switch language right away, before reading anything.
-            Segmented(selection: Binding(
+            MenuPicker(selection: Binding(
                 get: { Lang.code.hasPrefix("uk") ? "uk" : Lang.code.hasPrefix("ru") ? "ru" : "en" },
                 set: { new in
                     guard !Lang.code.hasPrefix(new) else { return }

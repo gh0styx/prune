@@ -132,7 +132,7 @@ struct MenuBarView: View {
                     .disabled(store.selectedItems.isEmpty || store.isScanning)
                 } else {
                     Button { store.scan(); if store.gatedAction != nil { open() } } label: {
-                        Label("Quick scan", systemImage: "bolt.fill")
+                        Label("Scan", systemImage: "bolt.fill")
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -143,8 +143,6 @@ struct MenuBarView: View {
 
             // Small actions as icons.
             HStack(spacing: 2) {
-                IconButton(symbol: "scope", help: "Full scan") { open(.overview); store.fullScan() }
-                    .disabled(store.isScanning)
                 IconButton(symbol: "macwindow", help: "Open Prune") { open() }
                 Spacer()
                 IconButton(symbol: "gearshape", help: "Settings…") { SettingsOpener.open(openWindow) }

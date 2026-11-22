@@ -125,7 +125,6 @@
 "I write code" = "Я програмую";
 "Image" = "Зображення";
 "In Trash" = "У Кошику";
-"Include the disk map in scans" = "Будувати карту диска під час перевірки";
 "Install Docker Desktop or OrbStack and Prune will find its images and caches." = "Встановіть Docker Desktop або OrbStack, і Prune знайде його образи та кеші.";
 "Installed but not running. Start it to include Docker in scans." = "Встановлено, але не запущено. Запустіть його, щоб враховувати Docker.";
 "Installer" = "Інсталятор";
@@ -234,7 +233,6 @@
 "Scanning your Mac" = "Перевіряю ваш Mac";
 "Scanning your Mac…" = "Перевіряю ваш Mac…";
 "Scanning…" = "Перевірка…";
-"Scans also build the Space map and Large files list. Adds about a minute on big disks." = "Перевірка також будує карту диска і список великих файлів. На великих дисках це ще приблизно хвилина.";
 "See what's taking space on your Mac and clean it safely." = "Дізнайтеся, що займає місце на Mac, і безпечно звільніть його.";
 "See what's taking space on your Mac.\nClean it without the guesswork." = "Дізнайтеся, що займає місце на Mac.\nОчистіть його без зайвих здогадок.";
 "See which folders take the most space and drill into them.\nTakes about a minute and reads only file sizes." = "Дізнайтеся, які теки займають найбільше місця, і загляньте всередину.\nЗаймає близько хвилини, Prune лише читає розміри.";
@@ -367,14 +365,10 @@
 "No scan yet" = "Перевірки ще не було";
 "used" = "зайнято";
 "%lld · %@" = "%lld · %@";
-"Quick scan" = "Швидка перевірка";
-"Full scan" = "Повна перевірка";
 "~10 sec" = "~10 сек";
 "~1 min" = "~1 хв";
 "Caches, logs, downloads and other junk." = "Кеші, журнали, завантаження та інше сміття.";
-"Everything in Quick, plus a disk map and your largest files." = "Усе зі швидкої перевірки, плюс карта диска та найбільші файли.";
-"⌘R quick scan  ·  ⇧⌘R full scan" = "⌘R — швидка  ·  ⇧⌘R — повна";
-"Quick checks caches and junk in seconds. Full also maps the disk and finds large files." = "Швидка перевіряє кеші та сміття за лічені секунди. Повна також будує карту диска і шукає великі файли.";
+"Checks caches and junk in seconds. The disk map is on the Space page." = "Перевіряє кеші та сміття за лічені секунди. Карта диска — на сторінці «Карта диска».";
 
 /* Maintenance & Login items */
 "Maintenance" = "Обслуговування";
@@ -489,7 +483,6 @@
 "Attachments Mail saved when you opened them. Mail downloads them again if needed." = "Вкладення, які Пошта зберегла, коли ви їх відкривали. За потреби Пошта завантажить їх знову.";
 "Identical files and similar photos. Keep one, move the rest to the Trash." = "Однакові файли та схожі фото. Залиште один, решту перемістіть до Кошика.";
 "Tools" = "Інструменти";
-"Full" = "Повна";
 "Attachment" = "Вкладення";
 "Photos keeps deleted pictures for 30 days" = "Фото зберігає видалені знімки 30 днів";
 "Open Photos › Recently Deleted and choose Delete All to free that space now." = "Відкрийте Фото › Нещодавно видалені і виберіть «Видалити все», щоб звільнити це місце зараз.";

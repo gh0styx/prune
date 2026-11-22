@@ -27,14 +27,10 @@ struct OverviewView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 PageHeader(title: "Overview", subtitle: subtitle) {
-                    Button("Quick scan") { store.scan() }
+                    Button("Scan") { store.scan() }
                         .buttonStyle(.secondary)
                         .help("⌘R")
                         .disabled(store.isScanning)
-                    Button("Full scan") { store.fullScan() }
-                        .buttonStyle(.secondary)
-                        .help("⇧⌘R")
-                        .disabled(store.isScanning || store.isMappingDisk)
                     CleanButton(items: store.selectedItems)
                 }
                 .appear()
@@ -500,14 +496,12 @@ struct ReadyView: View {
                 .appear(1.0)
 
             HStack(spacing: 10) {
-                Button("Quick scan") { store.scan() }
+                Button("Scan") { store.scan() }
                     .buttonStyle(PruneButtonStyle(kind: .primary, height: 38))
-                Button("Full scan") { store.fullScan() }
-                    .buttonStyle(PruneButtonStyle(kind: .secondary, height: 38))
             }
             .padding(.top, 26)
             .appear(1.1)
-            Text("Quick checks caches and junk in seconds. Full also maps the disk and finds large files.")
+            Text("Checks caches and junk in seconds. The disk map is on the Space page.")
                 .font(Theme.sans(11.5))
                 .foregroundStyle(Theme.faint)
                 .padding(.top, 12)

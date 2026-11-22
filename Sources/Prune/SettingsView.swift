@@ -136,6 +136,22 @@ struct Segmented<T: Hashable>: View {
     }
 }
 
+/// Dropdown for a short list of choices (used for the interface language).
+struct MenuPicker<T: Hashable>: View {
+    @Binding var selection: T
+    let options: [(T, String)]
+    var body: some View {
+        Picker("", selection: $selection) {
+            ForEach(options, id: \.0) { value, label in
+                Text(tr(label)).tag(value)
+            }
+        }
+        .pickerStyle(.menu)
+        .labelsHidden()
+        .fixedSize()
+    }
+}
+
 private struct Switch: View {
     @Binding var isOn: Bool
     var body: some View {
@@ -163,7 +179,6 @@ private struct GeneralSettings: View {
     @AppStorage(Prefs.Key.appearance) private var appearance = "dark"
     @AppStorage(Prefs.Key.showMenuBar) private var showMenuBar = true
     @AppStorage(Prefs.Key.scanOnLaunch) private var scanOnLaunch = false
-    @AppStorage(Prefs.Key.mapOnLaunch) private var mapOnLaunch = true
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
@@ -174,8 +189,8 @@ private struct GeneralSettings: View {
                     if languageChanged {
                         Button("Restart") { Lang.relaunch() }.buttonStyle(PruneButtonStyle(kind: .primary, height: 26))
                     }
-                    Segmented(selection: Binding(get: { language }, set: { language = $0; languageChanged = true }),
-                              options: [("system", "Match system"), ("ru", "Русский"), ("uk", "Українська"), ("en", "English")])
+                    MenuPicker(selection: Binding(get: { language }, set: { language = $0; languageChanged = true }),
+                               options: [("system", "Match system"), ("ru", "Русский"), ("uk", "Українська"), ("en", "English")])
                 }
             }
         }
@@ -220,10 +235,6 @@ private struct GeneralSettings: View {
                 }))
             }
             SettingRow(title: "Scan automatically when Prune opens", detail: "Off by default. Prune only scans when you ask.") { Switch(isOn: $scanOnLaunch) }
-            SettingRow(title: "Include the disk map in scans",
-                       detail: "Scans also build the Space map and Large files list. Adds about a minute on big disks.") {
-                Switch(isOn: $mapOnLaunch)
-            }
         }
     }
 }

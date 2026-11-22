@@ -108,21 +108,18 @@ final class Store {
         guard let action = gatedAction, AppPermissions.allGranted else { return }
         gatedAction = nil
         switch action {
-        case .quick: scan()
-        case .full: fullScan()
+        case .scan: scan()
         case .map: mapDisk()
         }
     }
 
     // MARK: Scan
 
-    /// Quick scan: junk categories only (seconds). Full scan: also maps the disk and finds large files.
-    func fullScan() { scan(full: true) }
-
-    func scan(scheduled: Bool = false, full: Bool = false) {
+    /// One scan: junk categories first (seconds), then the disk map when it is enabled or already exists.
+    func scan(scheduled: Bool = false) {
         guard !isScanning else { return }
         // Manual scans wait for the permissions they need; scheduled ones just run with what they have.
-        if !scheduled, !requirePermissions(for: full ? .full : .quick) { return }
+        if !scheduled, !requirePermissions(for: .scan) { return }
         scheduledRun = scheduled
         if !scheduled {
             // A manual scan restarts the schedule clock and is the moment to ask for notifications.
@@ -179,12 +176,6 @@ final class Store {
             lastScan = Date()
             disk = .current()
             notifyScanFinished()
-            if full {
-                tree = nil
-                mapDisk()
-            } else if tree == nil && Prefs.mapOnLaunch && !scheduledRun {
-                mapDisk()
-            }
             scheduledRun = false
         }
     }

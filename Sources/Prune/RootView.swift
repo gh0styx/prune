@@ -64,7 +64,7 @@ struct RootView: View {
         .frame(minWidth: 980, minHeight: 640)
         .task { if Prefs.scanOnLaunch && didOnboard && !store.hasScanned { store.scan() } }
         .task {
-            // `--args -previewGate YES` presses Quick scan on launch (for screenshots of the permissions gate).
+            // `--args -previewGate YES` presses Scan on launch (for screenshots of the permissions gate).
             if UserDefaults.standard.bool(forKey: "previewGate") { store.scan() }
         }
         .task {

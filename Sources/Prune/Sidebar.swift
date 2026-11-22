@@ -39,14 +39,9 @@ struct Sidebar: View {
             .padding(.top, 6)
             .padding(.bottom, 10)
 
-            HStack(spacing: 2) {
-                ActionRow(symbol: store.isScanning ? nil : "bolt.fill",
-                          title: store.isScanning ? "Scanning…" : "Quick scan", shortcut: "⌘R") {
-                    store.scan()
-                }
-                if !store.isScanning {
-                    FullScanButton()
-                }
+            ActionRow(symbol: store.isScanning ? nil : "bolt.fill",
+                      title: store.isScanning ? "Scanning…" : "Scan", shortcut: "⌘R") {
+                store.scan()
             }
             .disabled(store.isScanning)
             .padding(.bottom, 6)
@@ -325,29 +320,3 @@ private struct SidebarFooter: View {
     }
 }
 
-/// Small companion to "Quick scan" in the sidebar: starts a full scan.
-private struct FullScanButton: View {
-    @Environment(Store.self) private var store
-    @State private var hovering = false
-
-    var body: some View {
-        Button {
-            store.route = .overview
-            store.fullScan()
-        } label: {
-            Text("Full")
-                .font(Theme.sans(11.5, .medium))
-                .lineLimit(1)
-                .fixedSize()
-                .foregroundStyle(hovering ? Theme.text : Theme.muted)
-                .padding(.horizontal, 8)
-                .frame(height: 24)
-                .background(Theme.text.opacity(hovering ? 0.1 : 0.05), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .help(tr("Full scan") + "  ⇧⌘R")
-        .padding(.trailing, 4)
-    }
-}

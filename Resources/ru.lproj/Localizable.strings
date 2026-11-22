@@ -125,7 +125,6 @@
 "I write code" = "Я программирую";
 "Image" = "Изображение";
 "In Trash" = "В Корзине";
-"Include the disk map in scans" = "Строить карту диска при проверке";
 "Install Docker Desktop or OrbStack and Prune will find its images and caches." = "Установите Docker Desktop или OrbStack, и Prune найдёт его образы и кэши.";
 "Installed but not running. Start it to include Docker in scans." = "Установлен, но не запущен. Запустите его, чтобы учитывать Docker.";
 "Installer" = "Установщик";
@@ -234,7 +233,6 @@
 "Scanning your Mac" = "Проверяю ваш Mac";
 "Scanning your Mac…" = "Проверяю ваш Mac…";
 "Scanning…" = "Проверка…";
-"Scans also build the Space map and Large files list. Adds about a minute on big disks." = "Проверка заодно строит карту диска и список больших файлов. На больших дисках это ещё около минуты.";
 "See what's taking space on your Mac and clean it safely." = "Узнайте, что занимает место на Mac, и безопасно освободите его.";
 "See what's taking space on your Mac.\nClean it without the guesswork." = "Узнайте, что занимает место на Mac.\nОчистите его без лишних догадок.";
 "See which folders take the most space and drill into them.\nTakes about a minute and reads only file sizes." = "Узнайте, какие папки занимают больше всего места, и загляните внутрь.\nЗаймёт около минуты, Prune смотрит только размеры.";
@@ -367,14 +365,10 @@
 "No scan yet" = "Проверки ещё не было";
 "used" = "занято";
 "%lld · %@" = "%lld · %@";
-"Quick scan" = "Быстрая проверка";
-"Full scan" = "Полная проверка";
 "~10 sec" = "~10 сек";
 "~1 min" = "~1 мин";
 "Caches, logs, downloads and other junk." = "Кэши, журналы, загрузки и другой мусор.";
-"Everything in Quick, plus a disk map and your largest files." = "Всё из быстрой, плюс карта диска и самые большие файлы.";
-"⌘R quick scan  ·  ⇧⌘R full scan" = "⌘R — быстрая  ·  ⇧⌘R — полная";
-"Quick checks caches and junk in seconds. Full also maps the disk and finds large files." = "Быстрая проверяет кэши и мусор за секунды. Полная ещё строит карту диска и ищет большие файлы.";
+"Checks caches and junk in seconds. The disk map is on the Space page." = "Проверяет кэши и мусор за секунды. Карта диска — на её вкладке.";
 
 /* Maintenance & Login items */
 "Maintenance" = "Обслуживание";
@@ -489,7 +483,6 @@
 "Attachments Mail saved when you opened them. Mail downloads them again if needed." = "Вложения, которые Почта сохранила при открытии. При необходимости она скачает их снова.";
 "Identical files and similar photos. Keep one, move the rest to the Trash." = "Одинаковые файлы и похожие фото. Оставьте один, остальное — в Корзину.";
 "Tools" = "Инструменты";
-"Full" = "Полная";
 "Attachment" = "Вложение";
 "Photos keeps deleted pictures for 30 days" = "Фото хранит удалённые снимки 30 дней";
 "Open Photos › Recently Deleted and choose Delete All to free that space now." = "Откройте Фото › Недавно удалённые и выберите «Удалить все», чтобы освободить место сейчас.";

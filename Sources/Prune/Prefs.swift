@@ -8,7 +8,6 @@ enum Prefs {
         static let developerMode = "developerMode"
         static let showMenuBar = "showMenuBar"
         static let scanOnLaunch = "scanOnLaunch"
-        static let mapOnLaunch = "mapOnLaunch"
         static let staleDays = "staleDays"
         static let largeFileMB = "largeFileMB"
         static let useDefaultFolders = "useDefaultFolders"
@@ -28,7 +27,6 @@ enum Prefs {
     static var useDefaultFolders: Bool { bool(Key.useDefaultFolders, true) }
     static var extraFolders: [String] { d.stringArray(forKey: Key.extraFolders) ?? [] }
     static var scanOnLaunch: Bool { bool(Key.scanOnLaunch, false) }
-    static var mapOnLaunch: Bool { bool(Key.mapOnLaunch, true) }
     static var developerMode: Bool { bool(Key.developerMode, false) }
     static var ignoredPaths: [String] { d.stringArray(forKey: Key.ignoredPaths) ?? [] }
     static var notifications: Bool { bool(Key.notifications, true) }
