@@ -324,28 +324,31 @@ struct SidebarResizeHandle: View {
     @State private var hovering = false
 
     var body: some View {
+        // An opaque 10 pt gutter: the window is transparent, so anything not painted here would show
+        // what is behind the window. The 1 pt line is drawn only on hover or drag.
         Rectangle()
-            .fill(hovering || startWidth != nil ? Theme.muted : Theme.sidebarEdge)
-            .frame(width: 1)
-            .overlay {
-                Color.clear
-                    .frame(width: 9)
-                    .contentShape(Rectangle())
-                    .onHover { inside in
-                        hovering = inside
-                        if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
-                    }
-                    .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
-                        .onChanged { value in
-                            let base = startWidth ?? store.sidebarWidth
-                            if startWidth == nil { startWidth = base }
-                            store.sidebarWidth = min(max(base + value.translation.width, 200), 340)
-                        }
-                        .onEnded { _ in
-                            startWidth = nil
-                            UserDefaults.standard.set(Double(store.sidebarWidth), forKey: "sidebarWidth")
-                        })
+            .fill(Theme.bg)
+            .frame(width: 10)
+            .overlay(alignment: .center) {
+                Rectangle()
+                    .fill(hovering || startWidth != nil ? Theme.muted : Color.clear)
+                    .frame(width: 1)
             }
+            .contentShape(Rectangle())
+            .onHover { inside in
+                hovering = inside
+                if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() }
+            }
+            .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                .onChanged { value in
+                    let base = startWidth ?? store.sidebarWidth
+                    if startWidth == nil { startWidth = base }
+                    store.sidebarWidth = min(max(base + value.translation.width, 200), 340)
+                }
+                .onEnded { _ in
+                    startWidth = nil
+                    UserDefaults.standard.set(Double(store.sidebarWidth), forKey: "sidebarWidth")
+                })
             .ignoresSafeArea()
             .animation(.easeOut(duration: 0.15), value: hovering)
     }

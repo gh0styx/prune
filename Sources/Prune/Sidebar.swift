@@ -31,10 +31,20 @@ private struct GlassSurface: NSViewRepresentable {
     func makeNSView(context: Context) -> NSGlassEffectView {
         let v = NSGlassEffectView()
         v.style = .regular
+        v.tintColor = Self.tint
         return v
     }
 
-    func updateNSView(_ v: NSGlassEffectView, context: Context) {}
+    func updateNSView(_ v: NSGlassEffectView, context: Context) { v.tintColor = Self.tint }
+
+    /// A light or dark veil over the glass, so the sidebar reads less transparent in both appearances.
+    private static var tint: NSColor {
+        NSColor(name: nil) { ap in
+            ap.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                ? NSColor(hex: 0x1E1E21, alpha: 0.9)
+                : NSColor(hex: 0xF2F2F5, alpha: 0.9)
+        }
+    }
 }
 
 struct Sidebar: View {
