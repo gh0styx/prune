@@ -3,7 +3,7 @@ import Foundation
 // prune — terminal companion to Prune.app. Uses the same scanners and Trash rules as the app.
 // Nothing is removed without --yes, and removal always goes to the Trash (recoverable until you empty it).
 
-let cliVersion = "0.1.0"
+let cliVersion = "0.1.1"
 
 enum Help {
     static func print() {
@@ -58,47 +58,200 @@ enum Help {
     }
 }
 
-/// Interactive menu, used when prune runs with no arguments in a terminal.
-enum Menu {
-    static func run() {
-        let entries: [(label: String, command: String, destructive: Bool)] = [
-            ("Scan: what can be reclaimed", "scan", false),
-            ("Clean junk (caches, logs)", "clean", true),
-            ("Purge project folders (node_modules, builds)", "purge", true),
-            ("Analyze a folder", "analyze", false),
-            ("Find duplicates", "duplicates", true),
-            ("Uninstall an app", "uninstall", true),
-            ("System status", "status", false),
-            ("History of moves", "history", false),
-            ("Optimize (maintenance)", "optimize", true),
-        ]
-        while true {
-            say("")
-            say(Style.bold("prune") + Style.dim(" — pick an action"))
-            for (i, e) in entries.enumerated() {
-                say("  " + Style.cyan("\(i + 1)") + ". " + e.label)
-            }
-            say("  " + Style.cyan("q") + ". quit")
-            guard let choice = prompt("> "), !choice.isEmpty else { return }
-            if ["q", "quit", "exit"].contains(choice.lowercased()) { return }
-            guard let n = Int(choice), n >= 1, n <= entries.count else {
-                say("Pick a number from the list, or q.")
-                continue
-            }
-            let entry = entries[n - 1]
-            var o = Options()
-            o.command = entry.command
-            if entry.command == "analyze" {
-                if let p = prompt("Folder (Enter for your home): "), !p.isEmpty { o.path = p }
-            }
-            if entry.destructive {
-                // Show the plan first (dry run), then ask before anything is moved.
-                _ = dispatch(o)
-                if confirm("\nMove these to the Trash now?") { o.yes = true; _ = dispatch(o) }
-            } else {
-                _ = dispatch(o)
+/// Raw keyboard input for the menu. Commands themselves always run in normal (cooked) mode.
+enum Keys {
+    enum Key { case up, down, enter, quit, interrupt, char(Character), other }
+
+    /// Runs `body` with single keypresses (no echo, no line buffering). Nil when stdin is not a terminal.
+    static func rawMode<T>(_ body: () -> T) -> T? {
+        var original = termios()
+        guard tcgetattr(STDIN_FILENO, &original) == 0 else { return nil }
+        var raw = original
+        raw.c_lflag &= ~(tcflag_t(ICANON) | tcflag_t(ECHO) | tcflag_t(ISIG))
+        withUnsafeMutablePointer(to: &raw.c_cc) { tuple in
+            tuple.withMemoryRebound(to: cc_t.self, capacity: Int(NCCS)) { cc in
+                cc[Int(VMIN)] = 1
+                cc[Int(VTIME)] = 0
             }
         }
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw)
+        defer { tcsetattr(STDIN_FILENO, TCSAFLUSH, &original) }
+        return body()
+    }
+
+    static func read() -> Key {
+        var byte: UInt8 = 0
+        guard Darwin.read(STDIN_FILENO, &byte, 1) == 1 else { return .quit }
+        switch byte {
+        case 3: return .interrupt               // Ctrl-C
+        case 10, 13: return .enter
+        case 27:                                 // arrow keys arrive as ESC [ A / ESC [ B
+            var seq = [UInt8](repeating: 0, count: 2)
+            guard Darwin.read(STDIN_FILENO, &seq[0], 1) == 1, seq[0] == 91,
+                  Darwin.read(STDIN_FILENO, &seq[1], 1) == 1 else { return .quit }
+            switch seq[1] {
+            case 65: return .up
+            case 66: return .down
+            default: return .other
+            }
+        default:
+            return .char(Character(UnicodeScalar(byte)))
+        }
+    }
+}
+
+/// Logo with the URL and slogan beside it, shown at the top of the menu.
+enum Banner {
+    static let logo = [
+        "██████╗ ██████╗ ██╗   ██╗███╗   ██╗███████╗",
+        "██╔══██╗██╔══██╗██║   ██║████╗  ██║██╔════╝",
+        "██████╔╝██████╔╝██║   ██║██╔██╗ ██║█████╗  ",
+        "██╔═══╝ ██╔══██╗██║   ██║██║╚██╗██║██╔══╝  ",
+        "██║     ██║  ██║╚██████╔╝██║ ╚████║███████╗",
+        "╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝",
+    ]
+    static let shades = ["96", "96", "36", "36", "34", "34"]
+    static let side = [
+        "",
+        Style.bold("prune") + Style.dim("  ") + Style.cyan("prune.gh0styx.com"),
+        Style.dim("v\(cliVersion)"),
+        "Find the space you can free,",
+        "then free it safely.",
+        "",
+    ]
+
+    static func show() {
+        if Style.enabled { print("\u{1B}[2J\u{1B}[H", terminator: "") }
+        say("")
+        for i in logo.indices {
+            say("  " + Style.paint(logo[i], shades[i]) + "   " + side[i])
+        }
+        say("")
+    }
+}
+
+/// The interactive menu. Arrow keys and digits pick an entry, M shows the rest, Q quits.
+enum Menu {
+    struct Entry {
+        let label: String
+        let about: String
+        let command: String
+        let destructive: Bool
+        let inMain: Bool
+    }
+
+    static let entries: [Entry] = [
+        Entry(label: "Scan", about: "see what can be reclaimed", command: "scan", destructive: false, inMain: true),
+        Entry(label: "Clean", about: "move caches and logs to the Trash", command: "clean", destructive: true, inMain: true),
+        Entry(label: "Purge", about: "node_modules and build folders", command: "purge", destructive: true, inMain: true),
+        Entry(label: "Analyze", about: "biggest folders and large files", command: "analyze", destructive: false, inMain: true),
+        Entry(label: "Uninstall", about: "an app with its leftovers", command: "uninstall", destructive: true, inMain: true),
+        Entry(label: "Status", about: "disk, memory, load, uptime", command: "status", destructive: false, inMain: false),
+        Entry(label: "History", about: "what was moved to the Trash", command: "history", destructive: false, inMain: false),
+        Entry(label: "Duplicates", about: "identical files", command: "duplicates", destructive: true, inMain: false),
+        Entry(label: "Optimize", about: "DNS, Spotlight and other maintenance", command: "optimize", destructive: true, inMain: false),
+    ]
+
+    enum Choice { case run(Entry), version, more, quit }
+
+    static func run() {
+        var showMore = false
+        var selected = 0
+        while true {
+            let visible = showMore ? entries : entries.filter(\.inMain)
+            selected = min(selected, visible.count - 1)
+            // Raw keys when the terminal allows it, otherwise typed numbers.
+            let choice: Choice? = Keys.rawMode {
+                selectLoop(visible: visible, showMore: showMore, selected: &selected)
+            } ?? numberedChoice(visible)
+            switch choice {
+            case .quit:
+                return
+            case .more:
+                showMore.toggle()
+            case .version:
+                say("prune \(cliVersion)")
+                pause()
+            case .run(let entry):
+                execute(entry)
+                pause()
+            case .none:
+                continue
+            }
+        }
+    }
+
+    /// Draws the list and handles keys until the user picks something. Runs in raw mode.
+    static func selectLoop(visible: [Entry], showMore: Bool, selected: inout Int) -> Choice {
+        while true {
+            draw(visible, showMore: showMore, selected: selected)
+            switch Keys.read() {
+            case .up: selected = max(0, selected - 1)
+            case .down: selected = min(visible.count - 1, selected + 1)
+            case .enter: return .run(visible[selected])
+            case .quit, .interrupt: return .quit
+            case .char(let c):
+                let key = String(c).lowercased()
+                if let n = Int(key), n >= 1, n <= visible.count { return .run(visible[n - 1]) }
+                if key == "q" { return .quit }
+                if key == "v" { return .version }
+                if key == "m" { return .more }
+            case .other: break
+            }
+        }
+    }
+
+    static func draw(_ visible: [Entry], showMore: Bool, selected: Int) {
+        Banner.show()
+        let width = visible.map { $0.label.count }.max() ?? 10
+        for (i, e) in visible.enumerated() {
+            let isSel = i == selected
+            let marker = isSel ? Style.cyan("➤") : " "
+            let label = isSel ? Style.bold(column(e.label, width + 2)) : column(e.label, width + 2)
+            let warn = e.destructive ? Style.yellow(" ▲") : ""
+            say("   " + marker + " " + label + Style.dim(e.about) + warn)
+        }
+        say("")
+        say("  " + Style.dim("↑↓ move  |  Enter run  |  1–\(visible.count) pick  |  M \(showMore ? "less" : "more")  |  V version  |  Q quit"))
+        say("  " + Style.yellow("▲") + Style.dim(" these ask before moving anything to the Trash"))
+    }
+
+    /// Plain numbered menu, used when raw mode is unavailable.
+    static func numberedChoice(_ visible: [Entry]) -> Choice? {
+        Banner.show()
+        for (i, e) in visible.enumerated() {
+            say("  " + Style.cyan("\(i + 1)") + ". " + column(e.label, 12) + Style.dim(e.about))
+        }
+        say("  " + Style.dim("M more · V version · Q quit"))
+        guard let line = prompt("  › ")?.lowercased(), !line.isEmpty else { return .quit }
+        if ["q", "quit", "exit"].contains(line) { return .quit }
+        if line == "v" { return .version }
+        if line == "m" { return .more }
+        guard let n = Int(line), n >= 1, n <= visible.count else { return nil }
+        return .run(visible[n - 1])
+    }
+
+    /// Runs a menu entry: destructive ones show the plan first and ask before moving anything.
+    static func execute(_ entry: Entry) {
+        var o = Options()
+        o.command = entry.command
+        if entry.command == "analyze" {
+            if let p = prompt("  Folder (Enter for your home): "), !p.isEmpty { o.path = p }
+        }
+        say("")
+        _ = dispatch(o)
+        if entry.destructive, confirm("\n  Move these to the Trash now?") {
+            o.yes = true
+            _ = dispatch(o)
+        }
+    }
+
+    /// Waits for Enter so the output stays on screen before the menu redraws.
+    static func pause() {
+        guard isatty(STDIN_FILENO) != 0 else { return }
+        print("\n  " + Style.dim("Press Enter to return to the menu…"), terminator: "")
+        fflush(stdout)
+        _ = readLine()
     }
 
     /// Runs one command and returns its exit code. Never exits, so the menu keeps going after it.
