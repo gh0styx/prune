@@ -158,6 +158,7 @@ final class Store {
             ([.mailAttachments], { scanner.scanMailAttachments() }),
             ([.packageCaches], { scanner.scanPackageCaches() }),
             ([.appCaches], { scanner.scanAppCaches() }),
+            ([.messengerCaches], { scanner.scanMessengerCaches() }),
             ([.logs], { scanner.scanLogs() }),
         ]
         let jobs = allJobs.filter { cats, _ in cats.contains { visible.contains($0) } }

@@ -492,3 +492,9 @@
 "Prune checks again when you return to the app." = "Prune проверит доступ снова, когда вы вернётесь в приложение.";
 "Start scan" = "Начать сканирование";
 "Check for Updates…" = "Проверить обновления…";
+"Messenger caches" = "Кэш мессенджеров";
+"Photos, videos and files kept by messengers. They download again when you open a chat." = "Фото, видео и файлы, которые сохранили мессенджеры. Они загрузятся снова, когда вы откроете чат.";
+"Media" = "Медиа";
+"Animations" = "Анимации";
+"Media will download again" = "Медиа загрузятся снова";
+"Photos, videos and files come back from the server when you open a chat. Quit Telegram before cleaning. Media from secret chats can't be restored. Messages and your account are not touched." = "Фото, видео и файлы вернутся с сервера, когда вы откроете чат. Перед очисткой закройте Telegram. Медиа из секретных чатов восстановить нельзя. Сообщения и аккаунт не затрагиваются.";

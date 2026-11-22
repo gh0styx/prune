@@ -123,6 +123,10 @@ struct CategoryView: View {
                     PhotosTrashCard()
                     Hairline()
                 }
+                if category == .messengerCaches {
+                    MessengerCacheCard()
+                    Hairline()
+                }
                 if category == .largeFiles && store.items[.largeFiles] == nil && !store.isMappingDisk && !store.isFindingLargeFiles {
                     VStack(spacing: 12) {
                         IconTile(symbol: "doc.text.magnifyingglass", color: Theme.blue, size: 48)
@@ -329,6 +333,23 @@ private struct EmptyState: View {
 }
 
 /// Photos' "Recently Deleted" keeps photos for 30 days and only Photos can empty it.
+private struct MessengerCacheCard: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            IconTile(symbol: "exclamationmark.triangle", color: Theme.amber, size: 32)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Media will download again")
+                    .font(Theme.sans(13, .semibold)).foregroundStyle(Theme.text)
+                Text("Photos, videos and files come back from the server when you open a chat. Quit Telegram before cleaning. Media from secret chats can't be restored. Messages and your account are not touched.")
+                    .font(Theme.sans(12)).foregroundStyle(Theme.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+}
+
 private struct PhotosTrashCard: View {
     var body: some View {
         HStack(spacing: 12) {

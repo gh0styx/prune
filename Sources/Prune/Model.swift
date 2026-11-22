@@ -7,7 +7,7 @@ enum CategoryGroup: String, CaseIterable {
 }
 
 enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
-    case nodeModules, buildArtifacts, xcode, docker, packageCaches, appCaches, logs, downloads, iosBackups, mailAttachments, largeFiles, apps, duplicates, security
+    case nodeModules, buildArtifacts, xcode, docker, packageCaches, appCaches, messengerCaches, logs, downloads, iosBackups, mailAttachments, largeFiles, apps, duplicates, security
 
     /// Categories that count as junk: summed into "reclaimable" and shown on the overview.
     static var junk: [CategoryID] { allCases.filter { ![.largeFiles, .apps, .duplicates, .security].contains($0) } }
@@ -22,6 +22,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .docker: "Docker"
         case .packageCaches: "Package caches"
         case .appCaches: "App caches"
+        case .messengerCaches: "Messenger caches"
         case .logs: "Logs"
         case .downloads: "Downloads"
         case .iosBackups: "iPhone backups"
@@ -41,6 +42,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .docker: "Unused images, build cache, stopped containers and volumes."
         case .packageCaches: "npm, pnpm, Yarn, Bun, pip, uv, Homebrew, Cargo, Gradle."
         case .appCaches: "Caches that apps rebuild on their own when needed."
+        case .messengerCaches: "Photos, videos and files kept by messengers. They download again when you open a chat."
         case .logs: "Old diagnostic and application logs."
         case .downloads: "Installers you already used and files untouched for 90+ days."
         case .iosBackups: "Local backups of iPhone and iPad. Check you have a newer one first."
@@ -60,6 +62,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .docker: "server.rack"
         case .packageCaches: "archivebox"
         case .appCaches: "square.stack.3d.up"
+        case .messengerCaches: "bubble.left.and.bubble.right"
         case .logs: "text.alignleft"
         case .downloads: "arrow.down.circle"
         case .iosBackups: "iphone"
@@ -80,6 +83,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .docker: "server.rack"
         case .packageCaches: "archivebox.fill"
         case .appCaches: "square.stack.3d.up.fill"
+        case .messengerCaches: "bubble.left.and.bubble.right.fill"
         case .logs: "doc.text.fill"
         case .downloads: "arrow.down.circle.fill"
         case .iosBackups: "iphone"
@@ -94,7 +98,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
     var group: CategoryGroup {
         switch self {
         case .nodeModules, .buildArtifacts, .xcode, .docker, .packageCaches: .developer
-        case .appCaches, .logs, .downloads, .iosBackups: .system
+        case .appCaches, .messengerCaches, .logs, .downloads, .iosBackups: .system
         case .largeFiles, .apps, .duplicates, .security: .storage
         case .mailAttachments: .system
         }
@@ -108,6 +112,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .docker: Theme.cyan
         case .packageCaches: Theme.amber
         case .appCaches: Theme.teal
+        case .messengerCaches: Theme.blue
         case .logs: Theme.gray
         case .downloads: Theme.green
         case .iosBackups: Theme.red
@@ -128,7 +133,8 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .docker: item.kind == "images" || item.kind == "build cache"
         case .packageCaches, .logs: true
         case .mailAttachments: true
-        case .appCaches, .largeFiles, .downloads, .iosBackups, .apps, .duplicates, .security: false
+        // Off by default: media is downloaded again, but only once you open the chat again.
+        case .appCaches, .messengerCaches, .largeFiles, .downloads, .iosBackups, .apps, .duplicates, .security: false
         }
     }
 }

@@ -410,6 +410,7 @@ enum Trasher {
                            "Library/Application Support/MobileSync/Backup/",
                            "Library/Containers/com.apple.mail/Data/Library/Mail Downloads/",
                            "Library/Mail Downloads/"]
+            if Messengers.isCachePath(rel) { return true }
             return allowed.contains { rel.hasPrefix($0) } && parts.count >= 3
         }
         return true

@@ -29,6 +29,7 @@ enum SelfTest {
 
     static func run() {
         _ = treeTest()
+        messengerSafetyTest()
         let scanner = Scanner()
         print("Prune self-test (read-only)\n")
         print("Project roots: " + scanner.projectRoots().map { Fmt.tilde($0.path) }.joined(separator: ", "))
@@ -38,6 +39,7 @@ enum SelfTest {
         report("xcode") { scanner.scanXcode() }
         report("package caches") { scanner.scanPackageCaches() }
         report("app caches") { scanner.scanAppCaches() }
+        report("messenger caches") { scanner.scanMessengerCaches() }
         report("logs") { scanner.scanLogs() }
         report("downloads") { scanner.scanDownloads() }
         report("iPhone backups") { scanner.scanIOSBackups() }
@@ -116,6 +118,18 @@ enum SelfTest {
             print("    WRONG: \(Fmt.tilde(path)) expected \(expected ? "allowed" : "refused")")
         }
         print("Path rules: \(cases.count - bad)/\(cases.count) correct")
+    }
+
+    /// Messenger caches may be trashed; their databases, account keys and settings never may.
+    private static func messengerSafetyTest() {
+        let tg = FileManager.default.homeDirectoryForCurrentUser.path
+            + "/Library/Group Containers/6N38VWS5BX.ru.keepcoder.Telegram/appstore/"
+        let mustAllow = [tg + "account-1/postbox/media", tg + "account-1/postbox/media/", tg + "trlottie-animations"]
+        let mustRefuse = [tg + "account-1/postbox/db", tg + "account-1/postbox", tg + "accounts-metadata",
+                          tg + ".tempkeyEncrypted", tg + "account-1/postbox/media/../db", tg + "account-1/postbox/mediaX"]
+        let allowed = mustAllow.allSatisfy { Trasher.isSafe(URL(fileURLWithPath: $0)) }
+        let refused = mustRefuse.allSatisfy { !Trasher.isSafe(URL(fileURLWithPath: $0)) }
+        print("Messenger cache safety: \(allowed && refused ? "ok" : "WRONG") (allowed \(allowed), refused \(refused))\n")
     }
 
     private static func report(_ name: String, _ scan: () -> [CleanItem]) {
