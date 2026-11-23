@@ -15,3 +15,9 @@ DerivedData/
 .scratch*/
 scratch/
 xcuserdata/
+
+# Local-only tooling and test builds (never committed)
+launch-prune/
+PruneTest*
+**/PruneTest*
+icon-test/
