@@ -59,7 +59,6 @@ struct ReadyView: View {
                         .padding(.horizontal, 6)
                 }
                 .buttonStyle(PruneButtonStyle(kind: .primary, height: 44))
-                .help("⌘R")
             }
             .padding(.top, 26)
             .appear(1.1)

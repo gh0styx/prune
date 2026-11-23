@@ -7,6 +7,8 @@ final class Store {
     var items: [CategoryID: [CleanItem]] = [:]
     var pending: Set<CategoryID> = []
     var selection: Set<String> = []
+    /// Why an item could not be removed in the last clean, by item id. Shown on its row until it goes or the next scan.
+    var failedReasons: [String: String] = [:]
     var lastScan: Date?
     var disk = DiskInfo.current()
     var confirming: [CleanItem]?
@@ -80,7 +82,8 @@ final class Store {
     func items(_ c: CategoryID) -> [CleanItem] { items[c] ?? [] }
     /// Report-only items are shown with their size but are not part of anything Prune would free.
     func size(_ c: CategoryID) -> Int64 { items(c).filter { !$0.reportOnly }.reduce(0) { $0 + $1.size } }
-    func selected(in c: CategoryID) -> [CleanItem] { items(c).filter { selection.contains($0.id) } }
+    /// Items Prune can remove and that are selected. Report-only rows never count.
+    func selected(in c: CategoryID) -> [CleanItem] { items(c).filter { !$0.reportOnly && selection.contains($0.id) } }
 
     var allItems: [CleanItem] { junkCategories.flatMap { items($0) }.filter { !$0.reportOnly } }
     var reclaimable: Int64 { allItems.reduce(0) { $0 + $1.size } }

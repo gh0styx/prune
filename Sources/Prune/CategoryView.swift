@@ -48,7 +48,8 @@ struct CategoryView: View {
     var body: some View {
         let items = store.items(category)
         let selected = store.selected(in: category)
-        let allState: Bool? = selected.isEmpty ? false : selected.count == items.count ? true : nil
+        let removable = items.filter { !$0.reportOnly }
+        let allState: Bool? = selected.isEmpty ? false : selected.count == removable.count ? true : nil
 
         VStack(alignment: .leading, spacing: 0) {
             PageHeader(title: category.title, subtitle: category.blurb) {
@@ -109,7 +110,7 @@ struct CategoryView: View {
                 HStack(spacing: 12) {
                     Button { store.setAll(category, allState != true) } label: { CheckBox(state: allState) }
                         .buttonStyle(.plain)
-                        .disabled(items.isEmpty)
+                        .disabled(removable.isEmpty)
                     sortHeader("Name", .name)
                     Spacer()
                     sortHeader("Last activity", .date).frame(width: 130, alignment: .leading)
@@ -188,7 +189,16 @@ struct ItemRow: View {
     var body: some View {
         HoverRow {
             HStack(spacing: 12) {
-                CheckBox(state: selected)
+                if item.reportOnly {
+                    // Shown for its size only: no checkbox, the location line says where to remove it.
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.faint)
+                        .frame(width: 15)
+                        .help(tr("Prune only reports this. It is not removed."))
+                } else {
+                    CheckBox(state: selected)
+                }
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 8) {
                         Text(item.name)
@@ -200,6 +210,10 @@ struct ItemRow: View {
                             .foregroundStyle(Theme.faint)
                             .lineLimit(1)
                         if item.isStale { Badge(text: item.category == .largeFiles ? "Old" : "Stale", color: Theme.amber) }
+                        if let reason = store.failedReasons[item.id] {
+                            Badge(text: "Not removed", color: Theme.red)
+                                .help(reason)
+                        }
                     }
                     Text(item.location)
                         .font(Theme.mono(11))

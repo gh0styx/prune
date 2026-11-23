@@ -31,7 +31,6 @@ struct OverviewView: View {
                         Label("Scan", systemImage: "magnifyingglass")
                     }
                     .buttonStyle(.secondary)
-                        .help("⌘R")
                         .disabled(store.isScanning)
                     CleanButton(items: store.selectedItems)
                 }

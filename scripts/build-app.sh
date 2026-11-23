@@ -3,12 +3,27 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# PRUNE_TEST=1 builds a local test app, build/PruneTest.app: its own name and bundle id (so it never
+# conflicts with the installed Prune), and an orange sphere in the icon. The release build is unchanged.
+TEST_BUILD="${PRUNE_TEST:-0}"
+
 swift build -c release
 BIN="$(swift build -c release --show-bin-path)/Prune"
 
 ICON_DIR=build/icon
+APP=build/Prune.app
+if [ "$TEST_BUILD" = 1 ]; then
+  ICON_DIR=build/icon-test
+  APP=build/PruneTest.app
+fi
 rm -rf "$ICON_DIR" && mkdir -p "$ICON_DIR"
 "$BIN" --render-icon "$ICON_DIR"
+if [ "$TEST_BUILD" = 1 ]; then
+  # Recolor the grey sphere of the icon mark to orange (the blue spark stays).
+  for png in "$ICON_DIR"/AppIcon.icon/Assets/*.png; do
+    swift scripts/tint-icon.swift "$png" "$png.tmp" && mv "$png.tmp" "$png"
+  done
+fi
 iconutil -c icns "$ICON_DIR/AppIcon.iconset" -o "$ICON_DIR/AppIcon.icns"
 # Icon Composer icon (macOS 26+): Liquid Glass with light, dark and tinted appearances,
 # compiled into Assets.car. AppIcon.icns stays as the fallback for older macOS.
@@ -22,7 +37,6 @@ if ! xcrun actool "$ICON_DIR/AppIcon.icon" --compile "$ICON_DIR/car" --platform 
   exit 1
 fi
 
-APP=build/Prune.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Prune"
@@ -30,6 +44,13 @@ cp "$BIN" "$APP/Contents/MacOS/Prune"
 mkdir -p "$APP/Contents/Frameworks"
 ditto "$(swift build -c release --show-bin-path)/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+if [ "$TEST_BUILD" = 1 ]; then
+  # The test app has its own identity and no update feed, so it never replaces or updates from the release.
+  PB=/usr/libexec/PlistBuddy
+  $PB -c "Set :CFBundleName PruneTest" -c "Set :CFBundleDisplayName PruneTest" \
+      -c "Set :CFBundleIdentifier com.example.prune.test" "$APP/Contents/Info.plist"
+  $PB -c "Delete :SUFeedURL" "$APP/Contents/Info.plist" 2>/dev/null || true
+fi
 cp "$ICON_DIR/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cp "$ICON_DIR/car/Assets.car" "$APP/Contents/Resources/Assets.car"
 # Localizations (English source, Russian translation).

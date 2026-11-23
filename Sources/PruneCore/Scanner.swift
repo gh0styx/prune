@@ -465,6 +465,8 @@ enum Trasher {
         let name: String
         let reason: String
         var hint: String? = nil
+        /// The item's id, so the UI can mark the row that was not removed.
+        var id: String? = nil
     }
 
     /// The command that clears one command item, and a hint when the failure is about permissions.
@@ -485,12 +487,21 @@ enum Trasher {
                                                           trashPath: nil, size: item.size, state: .pruned))
                 } else {
                     let reason = run.error.isEmpty ? trf("command exited with code %lld", Int64(run.status)) : run.error
-                    result.failures.append(Failure(name: item.name, reason: reason, hint: commandHint(for: item)))
+                    result.failures.append(Failure(name: item.name, reason: reason, hint: commandHint(for: item), id: item.id))
                 }
                 continue
             }
-            // Report-only items show their size and nothing more; Prune never removes them.
-            guard !item.reportOnly, isSafe(item.url, leftover: item.isLeftover) else { continue }
+            // Report-only items show their size and nothing more; Prune never removes them, and says so
+            // instead of skipping them silently. The location line already says where they are removed.
+            guard !item.reportOnly else {
+                result.failures.append(Failure(name: item.name, reason: tr("Prune only reports this. It is not removed."),
+                                               hint: item.location, id: item.id))
+                continue
+            }
+            guard isSafe(item.url, leftover: item.isLeftover) else {
+                result.failures.append(Failure(name: item.name, reason: tr("Outside the folders Prune cleans."), id: item.id))
+                continue
+            }
             do {
                 var moved: NSURL?
                 try FileManager.default.trashItem(at: item.url, resultingItemURL: &moved)
@@ -500,6 +511,11 @@ enum Trasher {
                                                       trashPath: (moved as URL?)?.path, size: item.size, state: .inTrash))
             } catch {
                 NSLog("Prune: could not trash \(item.url.path): \(error)")
+                let denied = (error as NSError).code == NSFileWriteNoPermissionError
+                result.failures.append(Failure(name: item.name,
+                                               reason: error.localizedDescription,
+                                               hint: denied ? tr("Prune has no permission for this folder. Remove it by hand in Finder.") : nil,
+                                               id: item.id))
             }
         }
         return result

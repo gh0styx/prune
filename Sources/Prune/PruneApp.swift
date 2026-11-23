@@ -62,7 +62,6 @@ struct PruneApp: App {
         .commands {
             CommandGroup(replacing: .newItem) {
                 Button("Scan") { store.scan() }
-                    .keyboardShortcut("r")
             }
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesButton()

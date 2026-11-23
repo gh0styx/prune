@@ -88,7 +88,7 @@ struct Sidebar: View {
             .padding(.bottom, 10)
 
             ActionRow(symbol: store.isScanning ? nil : "bolt.fill",
-                      title: store.isScanning ? "Scanning…" : "Scan", shortcut: "⌘R") {
+                      title: store.isScanning ? "Scanning…" : "Scan", shortcut: "") {
                 store.scan()
             }
             .disabled(store.isScanning)

@@ -529,3 +529,7 @@
 "Needs an administrator. Run in Terminal: %@" = "Нужны права администратора. Выполните в Терминале: %@";
 "command exited with code %lld" = "команда завершилась с кодом %lld";
 "Not removed: %@ — %@" = "Не удалено: %@ — %@";
+"Prune only reports this. It is not removed." = "Prune только показывает этот пункт. Он не удаляется.";
+"Outside the folders Prune cleans." = "Вне папок, которые Prune чистит.";
+"Prune has no permission for this folder. Remove it by hand in Finder." = "У Prune нет прав на эту папку. Удалите её вручную в Finder.";
+"Not removed" = "Не удалено";

@@ -25,6 +25,14 @@ extension Store {
                     items[c] = items(c).filter { !result.trashed.contains($0.id) }
                 }
                 selection.subtract(result.trashed)
+                // Items that were not removed stay in the list, marked with the reason, and are deselected
+                // so the Clean total only counts what can go. Reselect one to try again.
+                for id in result.trashed { failedReasons[id] = nil }
+                for f in result.failures {
+                    guard let id = f.id else { continue }
+                    failedReasons[id] = f.reason
+                    selection.remove(id)
+                }
                 var deleted: [String: Int64] = [:]
                 for item in list where result.trashed.contains(item.id) && item.command == nil {
                     deleted[item.url.resolvingSymlinksInPath().path] = item.size + item.shared

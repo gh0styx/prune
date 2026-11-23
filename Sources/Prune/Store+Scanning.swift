@@ -171,7 +171,7 @@ extension Store {
                     .sorted { $0.size > $1.size }
                 selection.subtract(items(c).map(\.id))
                 items[c] = list
-                selection.formUnion(list.filter { c.selectedByDefault($0) }.map(\.id))
+                selection.formUnion(list.filter { !$0.reportOnly && c.selectedByDefault($0) }.map(\.id))
                 pending.remove(c)
             }
         }
@@ -180,17 +180,19 @@ extension Store {
     // MARK: Selection
 
     func toggle(_ item: CleanItem) {
+        // Report-only items (VM disks, simulator runtimes, logs) can't be selected: Prune doesn't remove them.
+        guard !item.reportOnly else { return }
         if selection.contains(item.id) { selection.remove(item.id) } else { selection.insert(item.id) }
     }
 
     func setAll(_ c: CategoryID, _ on: Bool) {
-        let ids = items(c).map(\.id)
+        let ids = items(c).filter { !$0.reportOnly }.map(\.id)
         if on { selection.formUnion(ids) } else { selection.subtract(ids) }
     }
 
     func selectStale(_ c: CategoryID) {
         selection.subtract(items(c).map(\.id))
-        selection.formUnion(items(c).filter(\.isStale).map(\.id))
+        selection.formUnion(items(c).filter { $0.isStale && !$0.reportOnly }.map(\.id))
     }
 
 }
