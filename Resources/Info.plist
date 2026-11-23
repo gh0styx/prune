@@ -15,7 +15,7 @@
     <key>CFBundleVersion</key><string>7</string>
     <key>LSMinimumSystemVersion</key><string>15.0</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
-    <key>SUFeedURL</key><string>https://raw.githubusercontent.com/gh0styx/prune/main/appcast.xml</string>
+    <key>SUFeedURL</key><string>https://prune.gh0styx.com/appcast.xml</string>
     <key>SUPublicEDKey</key><string>1A2KiIIO1E0bn99743kzM9B2vSY8b3I5LMZ/PGieOYA=</string>
     <key>SUEnableAutomaticChecks</key><true/>
     <key>SUScheduledCheckInterval</key><integer>86400</integer>

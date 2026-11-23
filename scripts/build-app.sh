@@ -13,9 +13,14 @@ iconutil -c icns "$ICON_DIR/AppIcon.iconset" -o "$ICON_DIR/AppIcon.icns"
 # Icon Composer icon (macOS 26+): Liquid Glass with light, dark and tinted appearances,
 # compiled into Assets.car. AppIcon.icns stays as the fallback for older macOS.
 mkdir -p "$ICON_DIR/car"
-xcrun actool "$ICON_DIR/AppIcon.icon" --compile "$ICON_DIR/car" --platform macosx \
+if ! xcrun actool "$ICON_DIR/AppIcon.icon" --compile "$ICON_DIR/car" --platform macosx \
   --minimum-deployment-target 15.0 --app-icon AppIcon \
-  --output-partial-info-plist "$ICON_DIR/partial.plist" >/dev/null
+  --output-partial-info-plist "$ICON_DIR/partial.plist" > "$ICON_DIR/actool.log" 2>&1 \
+  || [ ! -f "$ICON_DIR/car/Assets.car" ]; then
+  cat "$ICON_DIR/actool.log" >&2
+  echo "actool did not produce Assets.car" >&2
+  exit 1
+fi
 
 APP=build/Prune.app
 rm -rf "$APP"

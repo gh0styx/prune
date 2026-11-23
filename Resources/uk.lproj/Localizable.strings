@@ -498,3 +498,34 @@
 "Animations" = "Анімації";
 "Media will download again" = "Медіа завантажаться знову";
 "Photos, videos and files come back from the server when you open a chat. Quit Telegram before cleaning. Media from secret chats can't be restored. Messages and your account are not touched." = "Фото, відео та файли повернуться з сервера, коли ви відкриєте чат. Перед очищенням закрийте Telegram. Медіа з секретних чатів відновити не можна. Повідомлення й акаунт не змінюються.";
+"Keep only this copy" = "Залишити лише цю копію";
+"Keeps %@ · moves %lld to Trash" = "Залишимо %@ · до Кошика: %lld";
+"Keeps %lld copies · moves %lld to Trash" = "Залишимо копій: %lld · до Кошика: %lld";
+"Identical copies are sometimes needed on purpose. A project may expect its own copy of a file. Check both paths before you move anything to the Trash." = "Однакові копії іноді потрібні навмисно: проєкту може знадобитися власна копія файлу. Перевірте обидва шляхи, перш ніж переносити щось до Кошика.";
+"Cleanings" = "Очищень";
+"Freed for good" = "Звільнено назавжди";
+"In the Trash now" = "Зараз у Кошику";
+
+/* System data (Prune 0.2) */
+"System data" = "Системні дані";
+"Time Machine snapshots and app caches in Group Containers. VM disks, simulator runtimes and logs are shown with their size only." = "Знімки Time Machine і кеші застосунків у Group Containers. Диски віртуальних машин, середовища симуляторів і логи показано лише з розміром.";
+"Time Machine snapshot %@" = "Знімок Time Machine %@";
+"Size unknown. macOS also removes snapshots when it needs space." = "Розмір невідомий. macOS також видаляє знімки, коли потрібне місце.";
+"Docker Desktop disk" = "Диск Docker Desktop";
+"Clean inside Docker Desktop (Troubleshoot)" = "Очистіть у Docker Desktop (Troubleshoot)";
+"Simulator runtimes" = "Середовища симуляторів";
+"Remove in Xcode › Settings › Platforms" = "Видаліть у Xcode › Settings › Platforms";
+"Simulator system caches" = "Системні кеші симуляторів";
+"Needs admin. Xcode rebuilds them." = "Потрібні права адміністратора. Xcode перебудує їх.";
+"Per-user system caches" = "Системні кеші користувача";
+"macOS rebuilds these. Prune does not remove them." = "macOS відновлює їх сама. Prune їх не видаляє.";
+"Per-user temporary files" = "Тимчасові файли користувача";
+"Temporary files of running apps. Prune does not remove them." = "Тимчасові файли запущених застосунків. Prune їх не видаляє.";
+"System logs" = "Системні логи";
+"Needs admin" = "Потрібні права адміністратора";
+"System library logs" = "Логи системної бібліотеки";
+
+/* Failed removals (Prune 0.2) */
+"Needs an administrator. Run in Terminal: %@" = "Потрібні права адміністратора. Виконайте в Терміналі: %@";
+"command exited with code %lld" = "команда завершилася з кодом %lld";
+"Not removed: %@ — %@" = "Не видалено: %@ — %@";
