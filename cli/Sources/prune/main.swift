@@ -3,7 +3,7 @@ import Foundation
 // prune — terminal companion to Prune.app. Uses the same scanners and Trash rules as the app.
 // Nothing is removed without --yes, and removal always goes to the Trash (recoverable until you empty it).
 
-let cliVersion = "0.1.1"
+let cliVersion = "0.1.2"
 
 enum Help {
     static func print() {
