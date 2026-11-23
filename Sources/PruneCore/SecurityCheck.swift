@@ -35,8 +35,6 @@ struct SecurityFinding: Identifiable, Hashable, Sendable {
     let reason: String
     let removal: Removal
 
-    /// True only for things inside the user's home folder.
-    var canRemove: Bool { removal == .trash || removal == .browser || removal == .finder }
     /// True when Prune itself can move it to the Trash.
     var canTrash: Bool { removal == .trash }
 }

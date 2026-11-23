@@ -8,7 +8,7 @@ enum CategoryGroup: String, CaseIterable {
 }
 
 enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
-    case nodeModules, buildArtifacts, xcode, docker, packageCaches, appCaches, messengerCaches, logs, downloads, iosBackups, mailAttachments, largeFiles, apps, duplicates, security
+    case nodeModules, buildArtifacts, xcode, docker, packageCaches, appCaches, messengerCaches, logs, downloads, iosBackups, mailAttachments, systemData, largeFiles, apps, duplicates, security
 
     /// Categories that count as junk: summed into "reclaimable" and shown on the overview.
     static var junk: [CategoryID] { allCases.filter { ![.largeFiles, .apps, .duplicates, .security].contains($0) } }
@@ -30,6 +30,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .largeFiles: "Large files"
         case .apps: "Apps"
         case .mailAttachments: "Mail attachments"
+        case .systemData: "System data"
         case .duplicates: "Duplicates"
         case .security: "Security check"
         }
@@ -49,6 +50,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .iosBackups: "Local backups of iPhone and iPad. Check you have a newer one first."
         case .apps: "Remove apps together with the files they leave in your Library."
         case .mailAttachments: "Attachments Mail saved when you opened them. Mail downloads them again if needed."
+        case .systemData: "Time Machine snapshots and app caches in Group Containers. VM disks, simulator runtimes and logs are shown with their size only."
         case .duplicates: "Identical files and similar photos. Keep one, move the rest to the Trash."
         case .security: "Startup items, browser extensions and known adware."
         case .largeFiles: trf("Files over %lld MB in your home folder. Not junk by default, so look before you remove.", Prefs.largeFileMB)
@@ -70,6 +72,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .largeFiles: "doc.text.magnifyingglass"
         case .apps: "app.badge"
         case .mailAttachments: "paperclip"
+        case .systemData: "internaldrive"
         case .duplicates: "square.on.square"
         case .security: "checkmark.shield"
         }
@@ -91,6 +94,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .largeFiles: "doc.fill"
         case .apps: "app.badge.fill"
         case .mailAttachments: "paperclip"
+        case .systemData: "internaldrive.fill"
         case .duplicates: "square.on.square.fill"
         case .security: "checkmark.shield.fill"
         }
@@ -101,7 +105,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .nodeModules, .buildArtifacts, .xcode, .docker, .packageCaches: .developer
         case .appCaches, .messengerCaches, .logs, .downloads, .iosBackups: .system
         case .largeFiles, .apps, .duplicates, .security: .storage
-        case .mailAttachments: .system
+        case .mailAttachments, .systemData: .system
         }
     }
 
@@ -115,7 +119,7 @@ enum CategoryID: String, CaseIterable, Identifiable, Hashable, Sendable {
         case .packageCaches, .logs: true
         case .mailAttachments: true
         // Off by default: media is downloaded again, but only once you open the chat again.
-        case .appCaches, .messengerCaches, .largeFiles, .downloads, .iosBackups, .apps, .duplicates, .security: false
+        case .appCaches, .messengerCaches, .largeFiles, .downloads, .iosBackups, .apps, .duplicates, .security, .systemData: false
         }
     }
 }
@@ -135,6 +139,8 @@ struct CleanItem: Identifiable, Hashable, Sendable {
     var shared: Int64 = 0
     /// A file an uninstalled app left in ~/Library. Allowed through the trash rules only as part of an uninstall.
     var isLeftover = false
+    /// Shown with its size only (VM disks, system logs). Never removed, and not counted as reclaimable.
+    var reportOnly = false
 
     var id: String { url.absoluteString }
 }

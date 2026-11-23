@@ -192,12 +192,4 @@ extension Scanner {
         }
         return items
     }
-
-    /// Size of Photos' "Recently Deleted" can't be read or emptied by other apps; this only tells whether
-    /// a Photos library exists so the UI can offer to open it.
-    static var hasPhotosLibrary: Bool {
-        let pictures = FileManager.default.homeDirectoryForCurrentUser.appending(path: "Pictures")
-        let items = (try? FileManager.default.contentsOfDirectory(atPath: pictures.path)) ?? []
-        return items.contains { $0.hasSuffix(".photoslibrary") }
-    }
 }

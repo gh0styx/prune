@@ -14,6 +14,7 @@ enum Catalog {
             ([.downloads], { scanner.scanDownloads() }),
             ([.iosBackups], { scanner.scanIOSBackups() }),
             ([.mailAttachments], { scanner.scanMailAttachments() }),
+            ([.systemData], { SystemData.scan() }),
             ([.packageCaches], { scanner.scanPackageCaches() }),
             ([.appCaches], { scanner.scanAppCaches() }),
             ([.messengerCaches], { scanner.scanMessengerCaches() }),
@@ -23,12 +24,12 @@ enum Catalog {
 
     /// Hidden paths from Settings, and the safety rules every removal goes through.
     static func keep(_ items: [CleanItem]) -> [CleanItem] {
-        items.filter { ($0.command != nil || Trasher.isSafe($0.url)) && !isIgnored($0) }
+        items.filter { ($0.command != nil || $0.reportOnly || Trasher.isSafe($0.url)) && !isIgnored($0) }
             .sorted { $0.size > $1.size }
     }
 
     static func isIgnored(_ item: CleanItem) -> Bool {
-        Prefs.ignoredPaths.contains { item.url.path == $0 || item.url.path.hasPrefix($0 + "/") }
+        IgnoreList.contains(item.url)
     }
 
     /// Runs the jobs for the given categories (in parallel) and returns the kept items per category.

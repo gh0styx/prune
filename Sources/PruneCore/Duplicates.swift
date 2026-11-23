@@ -43,6 +43,28 @@ struct DuplicateGroup: Identifiable, Sendable {
     }
 }
 
+/// Which copy of a duplicate group stays where it is. Every other copy goes to the Trash.
+enum KeepRule: String, CaseIterable, Sendable {
+    case newest, oldest, largest
+
+    /// The copy this rule keeps. Files without a date count as the oldest.
+    func keeper(in files: [DuplicateFile]) -> DuplicateFile? {
+        switch self {
+        case .newest: files.max { ($0.modified ?? .distantPast) < ($1.modified ?? .distantPast) }
+        case .oldest: files.min { ($0.modified ?? .distantPast) < ($1.modified ?? .distantPast) }
+        case .largest: files.max { $0.size < $1.size }
+        }
+    }
+}
+
+extension DuplicateGroup {
+    /// The copies the rule would move to the Trash.
+    func trashed(keeping rule: KeepRule) -> [DuplicateFile] {
+        guard let keeper = rule.keeper(in: files) else { return [] }
+        return files.filter { $0.url != keeper.url }
+    }
+}
+
 /// Progress shared between the worker thread and the view.
 final class DupProgress: @unchecked Sendable {
     struct Snapshot: Sendable {
@@ -113,6 +135,7 @@ enum DuplicateFinder {
                     let name = url.lastPathComponent
                     guard let v = try? url.resourceValues(forKeys: Set(keys)) else { return }
                     if v.isDirectory == true {
+                        if IgnoreList.contains(url) { en.skipDescendants(); return }
                         let ext = url.pathExtension.lowercased()
                         if name == "node_modules" || name == ".git" || ext == "app" || ext == "photoslibrary" || name == "Library" && url.deletingLastPathComponent() == root.deletingLastPathComponent() {
                             en.skipDescendants()
@@ -137,9 +160,9 @@ enum DuplicateFinder {
 
     // MARK: Identical files
 
-    static func identical(progress: DupProgress) -> [DuplicateGroup] {
+    static func identical(progress: DupProgress, in folders: [URL]? = nil) -> [DuplicateGroup] {
         progress.reset(total: 0)
-        let all = walk(roots(["Documents", "Desktop", "Downloads", "Pictures", "Movies", "Music"]), progress: progress) { _, size in size >= minSize }
+        let all = walk(folders ?? roots(["Documents", "Desktop", "Downloads", "Pictures", "Movies", "Music"]), progress: progress) { _, size in size >= minSize }
 
         var bySize: [Int64: [Entry]] = [:]
         for e in all { bySize[e.size, default: []].append(e) }
@@ -189,9 +212,9 @@ enum DuplicateFinder {
 
     // MARK: Similar photos
 
-    static func similarPhotos(progress: DupProgress) -> [DuplicateGroup] {
+    static func similarPhotos(progress: DupProgress, in folders: [URL]? = nil) -> [DuplicateGroup] {
         progress.reset(total: 0)
-        let entries = walk(roots(["Pictures", "Desktop", "Downloads", "Documents"]), progress: progress,
+        let entries = walk(folders ?? roots(["Pictures", "Desktop", "Downloads", "Documents"]), progress: progress,
                            accept: { url, size in size > 0 && imageExtensions.contains(url.pathExtension.lowercased()) },
                            limit: maxPhotos)
         let n = entries.count

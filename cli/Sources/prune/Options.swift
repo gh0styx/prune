@@ -10,6 +10,7 @@ struct Options {
     var stale = false               // purge: only folders not touched recently
     var list = false                // scan: print every item
     var photos = false              // duplicates: similar photos too
+    var keep = KeepRule.largest     // duplicates: which copy stays
     var json = false                // history: JSON output
     var top = 15
     var limit = 20
@@ -17,7 +18,8 @@ struct Options {
     var help = false
     var version = false
 
-    static let commands = ["scan", "clean", "purge", "analyze", "duplicates", "uninstall", "status", "history", "optimize"]
+    static let commands = ["scan", "clean", "purge", "analyze", "duplicates", "uninstall", "status", "history", "optimize",
+                           "login-items", "security", "servers", "ignore"]
 
     static func parse(_ args: [String]) -> Options {
         var o = Options()
@@ -38,6 +40,10 @@ struct Options {
             case "--stale": o.stale = true
             case "--list", "-l": o.list = true
             case "--photos": o.photos = true
+            case "--keep":
+                let v = value(a)
+                guard let rule = KeepRule(rawValue: v) else { fail("--keep takes newest, oldest or largest") }
+                o.keep = rule
             case "--json": o.json = true
             case "--root": o.roots.append(URL(fileURLWithPath: (value(a) as NSString).expandingTildeInPath))
             case "--top": o.top = Int(value(a)) ?? 15
@@ -66,6 +72,7 @@ enum Groups {
         ("downloads", [.downloads], "installers and old files in Downloads"),
         ("backups", [.iosBackups], "local iPhone and iPad backups"),
         ("mail", [.mailAttachments], "attachments Mail saved to disk"),
+        ("system", [.systemData], "Time Machine snapshots and Group Container caches; VM disks and logs shown with size only"),
     ]
 
     static func resolve(_ names: [String], default fallback: [CategoryID]) -> Set<CategoryID> {

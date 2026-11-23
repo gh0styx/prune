@@ -272,6 +272,7 @@ struct DiskScanner: Sendable {
         children.reserveCapacity(entries.count)
         var files = 0
         for e in entries {
+            if IgnoreList.contains(e) { continue }
             guard let n = node(for: e, insidePackage: insidePackage, collector: collector) else { continue }
             if n.fileCount == 1 && n.children.isEmpty { files += 1 }
             children.append(n)

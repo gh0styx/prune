@@ -24,6 +24,10 @@ enum Help {
           status     disk, memory, load and uptime
           history    what was moved to the Trash, most recent first (--json for scripts)
           optimize   flush DNS, rebuild Spotlight and other maintenance (--yes to run)
+          login-items  list startup agents; off|on <name> to change one (--yes)
+          security   startup items, browser extensions and known adware (--yes trashes the removable ones)
+          servers    running dev servers; stop <pid|name> (--yes)
+          ignore     folders Prune leaves alone; add <path> or remove <path>
 
         \(Style.bold("Groups"))  (for scan and clean; default: all junk)
         """)
@@ -39,6 +43,7 @@ enum Help {
           --root DIR     project folder to search (repeatable; default: Developer, Projects, dev, …)
           --list, -l     list every item (scan)
           --photos       similar photos instead of identical files (duplicates; slow)
+          --keep RULE    which copy stays: newest, oldest or largest (duplicates; default largest)
           --path DIR     folder to analyze (analyze)
           --top N        rows to show (default 15)
           --limit N      entries to show (default 20)
@@ -150,6 +155,9 @@ enum Menu {
         Entry(label: "History", about: "what was moved to the Trash", command: "history", destructive: false, inMain: false),
         Entry(label: "Duplicates", about: "identical files", command: "duplicates", destructive: true, inMain: false),
         Entry(label: "Optimize", about: "DNS, Spotlight and other maintenance", command: "optimize", destructive: true, inMain: false),
+        Entry(label: "Login items", about: "turn startup agents on or off", command: "login-items", destructive: false, inMain: false),
+        Entry(label: "Security", about: "startup items, extensions, known adware", command: "security", destructive: true, inMain: false),
+        Entry(label: "Dev servers", about: "list and stop running dev servers", command: "servers", destructive: false, inMain: false),
     ]
 
     enum Choice { case run(Entry), version, more, quit }
@@ -266,6 +274,10 @@ enum Menu {
         case "status": Commands.status(); return 0
         case "history": Commands.history(o); return 0
         case "optimize": return Commands.optimize(o)
+        case "login-items": return Extras.loginItems(o)
+        case "security": return Extras.security(o)
+        case "servers": return Extras.servers(o)
+        case "ignore": return IgnoreCommand.run(o)
         default: return 2
         }
     }

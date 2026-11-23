@@ -57,6 +57,7 @@ enum LargeFileScanner {
             guard let v = try? url.resourceValues(forKeys: Set(keys)) else { continue }
             if v.isDirectory == true {
                 let name = url.lastPathComponent
+                if IgnoreList.contains(url) { e.skipDescendants(); continue }
                 if url.path == library || name == "node_modules" || name == "CloudStorage" { e.skipDescendants() }
                 continue
             }

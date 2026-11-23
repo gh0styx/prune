@@ -84,6 +84,7 @@ struct Scanner: Sendable {
         for child in children {
             guard let v = try? child.resourceValues(forKeys: Set(keys)),
                   v.isDirectory == true, v.isSymbolicLink != true, v.isPackage != true else { continue }
+            if IgnoreList.contains(child) { continue }
             let name = child.lastPathComponent
 
             if name == "node_modules" {
@@ -276,6 +277,22 @@ struct Scanner: Sendable {
 }
 
 enum Shell {
+    /// Runs a command and reports its exit status and stderr, so a failure can say what went wrong.
+    static func capture(_ path: String, _ args: [String], timeout: TimeInterval = 600) -> (status: Int32, error: String) {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: path)
+        p.arguments = args
+        let err = Pipe()
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = err
+        do { try p.run() } catch { return (-1, error.localizedDescription) }
+        DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { if p.isRunning { p.terminate() } }
+        let data = err.fileHandleForReading.readDataToEndOfFile()
+        p.waitUntilExit()
+        let text = (String(data: data, encoding: .utf8) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return (p.terminationStatus, text)
+    }
+
     /// Runs a binary and returns stdout, or nil on a non-zero exit or after `timeout` seconds
     /// (a stuck `docker` must never freeze scanning or cleaning).
     static func run(_ path: String, _ args: [String], timeout: TimeInterval = 30) -> String? {
@@ -392,6 +409,8 @@ enum Trasher {
     /// `leftover` additionally allows a single entry directly inside one of the ~/Library folders where
     /// apps keep data; only the uninstall flow sets it, for files it matched to that app.
     static func isSafe(_ url: URL, leftover: Bool = false) -> Bool {
+        // Folders the user chose to ignore are never removed, by either front end.
+        if IgnoreList.contains(url) { return false }
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
         // Resolve symlinks first: /Volumes/Macintosh HD points back at the startup disk.
         let path = url.resolvingSymlinksInPath().standardizedFileURL.path
@@ -403,6 +422,13 @@ enum Trasher {
         // Whole apps in /Applications can go to the Trash too.
         if path.hasPrefix("/Applications/") && path.hasSuffix(".app")
             && path.dropFirst("/Applications/".count).split(separator: "/").count == 1 { return true }
+        // Browser code-sign clones in the per-user temp folder: /private/var/folders/xx/yyy/X/<bundle>.code_sign_clone
+        // /var is a firmlink, so symlink resolution can leave it as /var; compare the same way either way.
+        let comps = (path.hasPrefix("/var/") ? "/private" + path : path).split(separator: "/").map(String.init)
+        if comps.count == 7, comps[0] == "private", comps[1] == "var", comps[2] == "folders", comps[5] == "X",
+           comps[6].hasSuffix(".code_sign_clone") {
+            return !SystemData.isRunning(bundle: String(comps[6].dropLast(".code_sign_clone".count)))
+        }
         guard path.hasPrefix(home + "/") else { return false }
         let rel = String(path.dropFirst(home.count + 1))
         let parts = rel.split(separator: "/")
@@ -418,6 +444,10 @@ enum Trasher {
                            "Library/Containers/com.apple.mail/Data/Library/Mail Downloads/",
                            "Library/Mail Downloads/"]
             if Messengers.isCachePath(rel) { return true }
+            // Caches an app keeps in its own group container: Library/Group Containers/<id>/Library/Caches/…
+            if parts.count >= 5, parts[1] == "Group Containers", parts[3] == "Library", parts[4] == "Caches" { return true }
+            // Electron and Chromium caches directly under ~/Library/Application Support/<app>/.
+            if parts.count == 4, parts[1] == "Application Support", SystemData.appCacheFolders.contains(String(parts[3])) { return true }
             return allowed.contains { rel.hasPrefix($0) } && parts.count >= 3
         }
         return true
@@ -427,21 +457,40 @@ enum Trasher {
         var freed: Int64 = 0
         var trashed = Set<String>()
         var entry: HistoryEntry
+        /// Command items that did not run, with the reason and what the user can do about it.
+        var failures: [Failure] = []
+    }
+
+    struct Failure: Sendable {
+        let name: String
+        let reason: String
+        var hint: String? = nil
+    }
+
+    /// The command that clears one command item, and a hint when the failure is about permissions.
+    static func commandHint(for item: CleanItem) -> String? {
+        guard let command = item.command, command.contains("deletelocalsnapshots"), let stamp = command.last else { return nil }
+        return trf("Needs an administrator. Run in Terminal: %@", "sudo tmutil deletelocalsnapshots \(stamp)")
     }
 
     static func trash(_ items: [CleanItem]) -> Result {
         var result = Result(entry: HistoryEntry(date: Date(), items: []))
         for item in items {
             if let command = item.command, let bin = command.first {
-                if Shell.run(bin, Array(command.dropFirst()), timeout: 600) != nil {
+                let run = Shell.capture(bin, Array(command.dropFirst()), timeout: 600)
+                if run.status == 0 {
                     result.freed += item.size
                     result.trashed.insert(item.id)
                     result.entry.items.append(HistoryItem(name: item.name, kind: item.kind, originalPath: "docker",
                                                           trashPath: nil, size: item.size, state: .pruned))
+                } else {
+                    let reason = run.error.isEmpty ? trf("command exited with code %lld", Int64(run.status)) : run.error
+                    result.failures.append(Failure(name: item.name, reason: reason, hint: commandHint(for: item)))
                 }
                 continue
             }
-            guard isSafe(item.url, leftover: item.isLeftover) else { continue }
+            // Report-only items show their size and nothing more; Prune never removes them.
+            guard !item.reportOnly, isSafe(item.url, leftover: item.isLeftover) else { continue }
             do {
                 var moved: NSURL?
                 try FileManager.default.trashItem(at: item.url, resultingItemURL: &moved)

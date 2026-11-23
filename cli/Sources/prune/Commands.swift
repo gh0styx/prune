@@ -18,7 +18,7 @@ enum Commands {
         var total: Int64 = 0
         say(Style.bold("Reclaimable space"))
         for g in Groups.table where g.cats.contains(where: { cats.contains($0) }) {
-            let items = g.cats.flatMap { found[$0] ?? [] }
+            let items = g.cats.flatMap { found[$0] ?? [] }.filter { !$0.reportOnly }
             guard !items.isEmpty else { continue }
             let sum = items.reduce(Int64(0)) { $0 + $1.size }
             total += sum
@@ -30,6 +30,13 @@ enum Commands {
                 for it in items.prefix(300) {
                     say("      " + rightColumn(bytes(it.size), 10) + "  " + it.name + "  " + Style.dim(it.location))
                 }
+            }
+        }
+        let reported = cats.flatMap { found[$0] ?? [] }.filter(\.reportOnly).sorted { $0.size > $1.size }
+        if !reported.isEmpty {
+            say("\n" + Style.bold("Report only") + Style.dim(" (Prune never removes these; the owner does)"))
+            for it in reported {
+                say("      " + rightColumn(bytes(it.size), 10) + "  " + it.name + "  " + Style.dim(it.location))
             }
         }
         if total == 0 {
@@ -49,7 +56,7 @@ enum Commands {
         for c in CategoryID.allCases where cats.contains(c) {
             let items = found[c] ?? []
             // Without --all only what Prune pre-selects: caches and stale project folders, never Docker volumes.
-            plan += o.all ? items : items.filter { c.selectedByDefault($0) }
+            plan += (o.all ? items : items.filter { c.selectedByDefault($0) }).filter { !$0.reportOnly }
         }
         return execute(plan, o)
     }
@@ -91,6 +98,10 @@ enum Commands {
         let failed = plan.count - result.trashed.count
         say("\n" + Style.green("Moved to Trash: ") + bytes(result.freed) + (failed > 0 ? Style.yellow("  skipped \(failed)") : ""))
         say(Style.dim("Empty the Trash to free the space. `prune history` lists what was moved."))
+        for f in result.failures {
+            say(Style.yellow("Not removed: ") + f.name + " — " + f.reason)
+            if let hint = f.hint { say(Style.dim("  " + hint)) }
+        }
         return failed > 0 ? 1 : 0
     }
 
@@ -142,8 +153,9 @@ enum Commands {
     static func duplicates(_ o: Options) -> Int32 {
         note(o.photos ? "Comparing photos. This is slow on big libraries…" : "Hashing files of 1 MB and up…")
         let progress = DupProgress()
-        let groups = o.photos ? DuplicateFinder.similarPhotos(progress: progress)
-                              : DuplicateFinder.identical(progress: progress)
+        let folders = o.roots.isEmpty ? nil : o.roots
+        let groups = o.photos ? DuplicateFinder.similarPhotos(progress: progress, in: folders)
+                              : DuplicateFinder.identical(progress: progress, in: folders)
         let sorted = groups.sorted { $0.wasted > $1.wasted }
         guard !sorted.isEmpty else {
             say("No duplicates found.")
@@ -151,15 +163,20 @@ enum Commands {
         }
         let total = sorted.reduce(Int64(0)) { $0 + $1.wasted }
         say(Style.bold("Duplicates: \(sorted.count) groups, \(bytes(total)) could be freed"))
+        if !o.photos {
+            say(Style.yellow("Identical copies are sometimes needed on purpose. A project may expect its own copy, so check each path before --yes."))
+        }
         for g in sorted.prefix(o.top) {
-            say(Style.bold(bytes(g.wasted)) + Style.dim("  \(g.files.count) copies, keeping the largest"))
+            say(Style.bold(bytes(g.wasted)) + Style.dim("  \(g.files.count) copies, keeping the \(o.keep.rawValue)"))
+            let keeper = o.keep.keeper(in: g.files)?.url
             for f in g.files.sorted(by: { $0.size > $1.size }) {
-                say("    " + Style.dim(f.location + "/") + f.name)
+                let tag = f.url == keeper ? Style.green("keep ") : Style.yellow("trash")
+                say("    " + tag + "  " + Style.dim(f.location + "/") + f.name)
             }
         }
-        // Keep the largest copy in each group and move the rest.
+        // Move every copy that the keep rule does not pick.
         let plan: [CleanItem] = sorted.flatMap { g -> [CleanItem] in
-            g.files.sorted { $0.size > $1.size }.dropFirst().map { f in
+            g.trashed(keeping: o.keep).map { f in
                 CleanItem(url: f.url, category: .duplicates, name: f.name, kind: "duplicate",
                           location: f.location, size: f.size, lastActivity: f.modified, isStale: false)
             }

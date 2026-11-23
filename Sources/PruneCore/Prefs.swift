@@ -28,7 +28,6 @@ enum Prefs {
     static var extraFolders: [String] { d.stringArray(forKey: Key.extraFolders) ?? [] }
     static var scanOnLaunch: Bool { bool(Key.scanOnLaunch, false) }
     static var developerMode: Bool { bool(Key.developerMode, false) }
-    static var ignoredPaths: [String] { d.stringArray(forKey: Key.ignoredPaths) ?? [] }
     static var notifications: Bool { bool(Key.notifications, true) }
     static var schedule: String { d.string(forKey: Key.schedule) ?? "weekly" }
 
