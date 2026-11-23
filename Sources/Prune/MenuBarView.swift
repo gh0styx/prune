@@ -132,7 +132,7 @@ struct MenuBarView: View {
                     .disabled(store.selectedItems.isEmpty || store.isScanning)
                 } else {
                     Button { store.scan(); if store.gatedAction != nil { open() } } label: {
-                        Label("Scan", systemImage: "bolt.fill")
+                        Label("Scan", systemImage: "magnifyingglass")
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -168,20 +168,6 @@ struct MenuBarView: View {
             }
         } else if let last = store.lastScan {
             Text(trf("Updated %@", Fmt.relative(last))).font(Theme.sans(11)).foregroundStyle(.secondary)
-        }
-    }
-}
-
-private struct DiskLine: View {
-    let disk: DiskInfo
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "internaldrive").font(.system(size: 10)).foregroundStyle(.secondary)
-            Text(trf("%@ free of %@", Fmt.bytes(disk.free), Fmt.bytes(disk.total)))
-                .font(Theme.sans(11)).foregroundStyle(.secondary)
-            Spacer()
-            Text(trf("%lld%% used", Int((disk.usedFraction * 100).rounded())))
-                .font(Theme.mono(10.5)).foregroundStyle(.secondary)
         }
     }
 }

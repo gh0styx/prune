@@ -26,6 +26,7 @@ struct HistoryView: View {
                     .padding(.vertical, 60)
                     .card()
                 } else {
+                    HistorySummary(entries: store.history).appear()
                     ForEach(Array(store.history.enumerated()), id: \.element.id) { i, entry in
                         EntryCard(entry: entry).appear(Double(min(i, 8)) * 0.05)
                     }
@@ -38,6 +39,34 @@ struct HistoryView: View {
             .frame(maxWidth: .infinity)
         }
         .scrollIndicators(.never)
+    }
+}
+
+/// Totals across every cleaning: what is gone for good, what is still in the Trash, what was put back.
+private struct HistorySummary: View {
+    let entries: [HistoryEntry]
+
+    var body: some View {
+        HStack(spacing: 12) {
+            stat(tr("Cleanings"), "\(entries.count)")
+            stat(tr("Freed for good"), Fmt.bytes(sum([.deleted, .pruned])))
+            stat(tr("In the Trash now"), Fmt.bytes(sum([.inTrash])))
+            stat(tr("Put back"), Fmt.bytes(sum([.restored])))
+        }
+    }
+
+    private func sum(_ states: [HistoryItem.State]) -> Int64 {
+        entries.flatMap(\.items).filter { states.contains($0.state) }.reduce(0) { $0 + $1.size }
+    }
+
+    private func stat(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(value).font(Theme.sans(18, .semibold)).foregroundStyle(Theme.text)
+            Text(title).font(Theme.sans(12)).foregroundStyle(Theme.muted)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .card()
     }
 }
 

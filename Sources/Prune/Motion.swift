@@ -207,20 +207,6 @@ struct Burst: View {
 // MARK: Liquid Glass
 
 extension View {
-    /// System glass buttons on macOS 26+, our own styles before that.
-    @ViewBuilder
-    func glassButton(prominent: Bool = false) -> some View {
-        if #available(macOS 26.0, *) {
-            if prominent {
-                self.buttonStyle(.glassProminent).tint(Theme.blue).controlSize(.large)
-            } else {
-                self.buttonStyle(.glass).controlSize(.large)
-            }
-        } else {
-            self.buttonStyle(PruneButtonStyle(kind: prominent ? .primary : .secondary))
-        }
-    }
-
     /// Real window-level Liquid Glass (NSGlassEffectView) behind the view on macOS 26+,
     /// a popover material before that.
     func glassWindowBackground(radius: CGFloat = 16) -> some View {
@@ -272,17 +258,4 @@ struct WindowGlass: NSViewRepresentable {
             hideMaterials(in: sub, except: content)
         }
     }
-}
-
-/// Hands the view's NSWindow to `configure` once it is attached.
-struct WindowAccessor: NSViewRepresentable {
-    let configure: (NSWindow) -> Void
-
-    func makeNSView(context: Context) -> NSView {
-        let v = NSView()
-        DispatchQueue.main.async { if let w = v.window { configure(w) } }
-        return v
-    }
-
-    func updateNSView(_ v: NSView, context: Context) {}
 }

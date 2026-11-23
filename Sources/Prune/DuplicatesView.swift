@@ -138,6 +138,7 @@ struct DuplicatesView: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: 12) {
+                    if tab == .identical { duplicateWarning }
                     ForEach(Array(current.groups.enumerated()), id: \.element.id) { i, g in
                         groupCard(g)
                             .appear(Double(min(i, 10)) * 0.04)
@@ -168,14 +169,47 @@ struct DuplicatesView: View {
                 if i > 0 { Hairline() }
                 let on = selected.contains(f.url)
                 let isLast = !on && unselected.count == 1
-                fileRow(f, on: on, locked: isLast)
+                fileRow(f, in: g, on: on, locked: isLast)
             }
+            Hairline()
+            HStack(spacing: 6) {
+                Text(keepSummary(g, selected: selected))
+                    .font(Theme.sans(12)).foregroundStyle(Theme.muted)
+                    .lineLimit(1).truncationMode(.middle)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 34)
         }
         .card()
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private func fileRow(_ f: DuplicateFile, on: Bool, locked: Bool) -> some View {
+    private func keepSummary(_ g: DuplicateGroup, selected: Set<URL>) -> String {
+        let kept = g.files.filter { !selected.contains($0.url) }
+        let moved = g.files.count - kept.count
+        if kept.count == 1, let k = kept.first {
+            return trf("Keeps %@ · moves %lld to Trash", k.location + "/" + k.name, moved)
+        }
+        return trf("Keeps %lld copies · moves %lld to Trash", kept.count, moved)
+    }
+
+    private var duplicateWarning: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.amber)
+            Text(tr("Identical copies are sometimes needed on purpose. A project may expect its own copy of a file. Check both paths before you move anything to the Trash."))
+                .font(Theme.sans(12.5)).foregroundStyle(Theme.muted)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.hover)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func fileRow(_ f: DuplicateFile, in g: DuplicateGroup, on: Bool, locked: Bool) -> some View {
         HoverRow {
             HStack(spacing: 12) {
                 Button { toggle(f) } label: {
@@ -192,7 +226,7 @@ struct DuplicatesView: View {
                         .lineLimit(1).truncationMode(.head)
                 }
                 Spacer(minLength: 12)
-                if !on { Badge(text: "Keep", color: Theme.green) }
+                Badge(text: on ? tr("Move to Trash") : tr("Keep"), color: on ? Theme.red : Theme.green)
                 if tab == .photos {
                     Text(Fmt.bytes(f.size)).font(Theme.mono(11.5)).foregroundStyle(Theme.muted)
                 }
@@ -205,6 +239,8 @@ struct DuplicatesView: View {
             .onTapGesture { if !locked { toggle(f) } }
         }
         .contextMenu {
+            Button("Keep only this copy") { keepOnly(g, f) }
+            Divider()
             Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([f.url]) }
             Button("Open") { NSWorkspace.shared.open(f.url) }
         }
@@ -238,9 +274,7 @@ struct DuplicatesView: View {
     }
 
     private static func defaultSelection(_ g: DuplicateGroup, keepNewest: Bool) -> [URL] {
-        let sorted = g.files.sorted { ($0.modified ?? .distantPast) < ($1.modified ?? .distantPast) }
-        let keeper = keepNewest ? sorted.last : sorted.first
-        return g.files.filter { $0.url != keeper?.url }.map(\.url)
+        g.trashed(keeping: keepNewest ? .newest : .oldest).map(\.url)
     }
 
     private func keep(_ g: DuplicateGroup, newest: Bool) {
@@ -248,6 +282,14 @@ struct DuplicatesView: View {
         update(tab) {
             $0.selected.subtract(urls)
             $0.selected.formUnion(Self.defaultSelection(g, keepNewest: newest))
+        }
+    }
+
+    private func keepOnly(_ g: DuplicateGroup, _ f: DuplicateFile) {
+        let urls = Set(g.files.map(\.url))
+        update(tab) {
+            $0.selected.subtract(urls)
+            $0.selected.formUnion(urls.subtracting([f.url]))
         }
     }
 

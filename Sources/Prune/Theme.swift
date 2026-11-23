@@ -19,7 +19,6 @@ extension Color {
 /// Geist-like tokens: dark-gray canvas (like Claude/Codex), hairline borders, one accent per meaning.
 enum Theme {
     static let bg = Color.dynamic(0xFAFAFA, 0x191919)
-    static let sidebarEdge = Color.dynamic(0xBFBFC4, 0x4A4A4F)
     static let card = Color.dynamic(0xFFFFFF, 0x212121)
     static let border = Color.dynamic(0xEAEAEA, 0x2E2E2E)
     static let borderStrong = Color.dynamic(0xD4D4D4, 0x404040)

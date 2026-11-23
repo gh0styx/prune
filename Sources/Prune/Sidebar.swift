@@ -8,20 +8,35 @@ struct VisualEffect: NSViewRepresentable {
         let v = NSVisualEffectView()
         v.material = material
         v.blendingMode = .behindWindow
-        v.state = .followsWindowActiveState
+        // Always the active look: with .followsWindowActiveState the sidebar turns see-through when Prune is in the background.
+        v.state = .active
         return v
     }
 
     func updateNSView(_ v: NSVisualEffectView, context: Context) { v.material = material }
 }
 
-/// Real Liquid Glass (NSGlassEffectView) on macOS 26+; the sidebar vibrancy material before that.
+/// Real Liquid Glass (NSGlassEffectView) on macOS 26+, the native sidebar material before that.
 struct SidebarGlass: View {
     var body: some View {
         if #available(macOS 26.0, *) {
-            GlassSurface()
+            // A blur that always stays active sits under the glass, so the sidebar does not turn
+            // see-through when the window loses focus. The tint stays on top.
+            ZStack {
+                VisualEffect(material: .sidebar)
+                GlassSurface()
+                // The glass turns light grey when the window is inactive, so a near-solid colour sits on top of it.
+                Color(nsColor: Self.backing).opacity(0.95)
+            }
         } else {
             VisualEffect(material: .sidebar)
+        }
+    }
+
+    /// The sidebar's colour, used for the resize gutter next to it.
+    static var backing: NSColor {
+        NSColor(name: nil) { ap in
+            ap.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(hex: 0x262624) : NSColor(hex: 0xF2F2F5)
         }
     }
 }
@@ -37,11 +52,12 @@ private struct GlassSurface: NSViewRepresentable {
 
     func updateNSView(_ v: NSGlassEffectView, context: Context) { v.tintColor = Self.tint }
 
-    /// A light or dark veil over the glass, so the sidebar reads less transparent in both appearances.
+    /// A near-opaque dark veil in dark mode (like Claude's sidebar) and a light one in light mode,
+    /// so the glass keeps its colour whether or not the window is active.
     private static var tint: NSColor {
         NSColor(name: nil) { ap in
             ap.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                ? NSColor(hex: 0x1E1E21, alpha: 0.9)
+                ? NSColor(hex: 0x262624, alpha: 0.95)
                 : NSColor(hex: 0xF2F2F5, alpha: 0.9)
         }
     }
@@ -125,7 +141,7 @@ struct Sidebar: View {
         }
         .padding(.horizontal, 8)
         .frame(width: store.sidebarWidth)
-        .frame(maxHeight: .infinity)
+        .frame(maxHeight: .infinity, alignment: .top)
         // Liquid Glass on macOS 26+, the native sidebar material before that. No opaque tint on top,
         // so the wallpaper and windows behind the app show through.
         .background {
@@ -150,27 +166,6 @@ struct Sidebar: View {
 }
 
 // MARK: Pieces
-
-struct SidebarToggle: View {
-    @Environment(Store.self) private var store
-    @State private var hovering = false
-
-    var body: some View {
-        Button {
-            withAnimation(.snappy(duration: 0.3)) { store.sidebarVisible.toggle() }
-        } label: {
-            Image(systemName: "sidebar.left")
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(hovering ? Theme.text : Theme.muted)
-                .frame(width: 28, height: 24)
-                .background(hovering ? Theme.text.opacity(0.07) : .clear, in: RoundedRectangle(cornerRadius: 6))
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .help("Toggle sidebar  ⌃⌘S")
-    }
-}
 
 private struct ActionRow: View {
     let symbol: String?

@@ -256,16 +256,6 @@ struct SectionLabel: View {
     }
 }
 
-struct LogoMark: View {
-    var size: CGFloat = 22
-    var body: some View {
-        Image(nsImage: IconArt.appIcon(size: size * 2))
-            .resizable()
-            .interpolation(.high)
-            .frame(width: size, height: size)
-    }
-}
-
 /// Lays children out left to right and wraps to a new line when the row is full
 /// (keeps long translated labels from pushing the window wider).
 struct FlowLayout: Layout {

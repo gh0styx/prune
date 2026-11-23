@@ -16,6 +16,7 @@ extension CategoryID {
         case .largeFiles: Theme.muted
         case .apps: Theme.blue
         case .mailAttachments: Theme.cyan
+        case .systemData: Theme.muted
         case .duplicates: Theme.violet
         case .security: Theme.green
         }
