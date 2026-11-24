@@ -50,6 +50,12 @@ extension Store {
                 let failed = list.count - result.trashed.count
                 toastHasActions = !result.entry.inTrash.isEmpty
                 toast = trf("%@ moved to Trash", Fmt.bytes(result.freed)) + (failed > 0 ? " · " + trf("%lld skipped", failed) : "")
+                // Snapshots report no size, so tell the user what is free now instead of a freed total.
+                let snapshotsRemoved = list.filter { $0.command?.first == "/usr/bin/tmutil" && result.trashed.contains($0.id) }.count
+                if snapshotsRemoved > 0 {
+                    toast = (toast ?? "") + " · " + trf("%lld snapshots removed", snapshotsRemoved)
+                        + " · " + trf("%@ free now", Fmt.bytes(disk.free))
+                }
                 if let first = result.failures.first {
                     // Say why, and what to do, instead of only counting the skipped items.
                     var lines = [trf("Not removed: %@ — %@", first.name, first.reason)]

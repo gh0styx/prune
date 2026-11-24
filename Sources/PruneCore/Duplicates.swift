@@ -75,6 +75,11 @@ final class DupProgress: @unchecked Sendable {
 
     private let lock = NSLock()
     private var value = Snapshot()
+    private var cancelled = false
+
+    /// Stops the running scan. The scan loops check this and return what they have so far.
+    func cancel() { lock.lock(); cancelled = true; lock.unlock() }
+    var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
 
     func reset(total: Int) {
         lock.lock(); value = Snapshot(processed: 0, total: total, path: ""); lock.unlock()
@@ -128,9 +133,11 @@ enum DuplicateFinder {
         var ids = Set<NSObject>()
         var count = 0
         for root in roots {
+            if progress.isCancelled { break }
             guard let en = FileManager.default.enumerator(at: root, includingPropertiesForKeys: keys,
                                                           options: [.skipsHiddenFiles, .skipsPackageDescendants]) else { continue }
             for case let url as URL in en {
+                if progress.isCancelled { break }
                 autoreleasepool {
                     let name = url.lastPathComponent
                     guard let v = try? url.resourceValues(forKeys: Set(keys)) else { return }
@@ -173,6 +180,7 @@ enum DuplicateFinder {
 
         var groups: [DuplicateGroup] = []
         for same in sized {
+            if progress.isCancelled { break }
             var byHead: [Data: [Entry]] = [:]
             for e in same {
                 progress.advance(path: Fmt.tilde(e.url.path))
@@ -190,6 +198,7 @@ enum DuplicateFinder {
                 }
             }
         }
+        if progress.isCancelled { return [] }
         return groups.sorted { $0.wasted > $1.wasted }
     }
 
@@ -217,6 +226,7 @@ enum DuplicateFinder {
         let entries = walk(folders ?? roots(["Pictures", "Desktop", "Downloads", "Documents"]), progress: progress,
                            accept: { url, size in size > 0 && imageExtensions.contains(url.pathExtension.lowercased()) },
                            limit: maxPhotos)
+        if progress.isCancelled { return [] }
         let n = entries.count
         progress.reset(total: n)
 
@@ -224,6 +234,7 @@ enum DuplicateFinder {
         let lock = NSLock()
         var prints = [VNFeaturePrintObservation?](repeating: nil, count: n)
         DispatchQueue.concurrentPerform(iterations: n) { i in
+            if progress.isCancelled { return }
             autoreleasepool {
                 let e = entries[i]
                 let fp = featurePrint(e.url)
@@ -232,18 +243,11 @@ enum DuplicateFinder {
             }
         }
 
-        // Pairwise distances, linked with union-find.
+        // Pairwise distances. Two photos are "similar" when their distance is under the threshold.
         progress.reset(total: n)
-        var parent = Array(0..<n)
-        func find(_ x: Int) -> Int {
-            var r = x
-            while parent[r] != r { r = parent[r] }
-            var c = x
-            while parent[c] != r { let nx = parent[c]; parent[c] = r; c = nx }
-            return r
-        }
         var edges: [[Int]] = Array(repeating: [], count: n)
         DispatchQueue.concurrentPerform(iterations: n) { i in
+            if progress.isCancelled { return }
             var found: [Int] = []
             if let a = prints[i] {
                 var j = i + 1
@@ -258,11 +262,27 @@ enum DuplicateFinder {
             lock.lock(); edges[i] = found; lock.unlock()
             progress.advance(path: Fmt.tilde(entries[i].url.path))
         }
-        for i in 0..<n { for j in edges[i] { let a = find(i), b = find(j); if a != b { parent[a] = b } } }
+        if progress.isCancelled { return [] }
 
-        var clusters: [Int: [Int]] = [:]
-        for i in 0..<n where prints[i] != nil { clusters[find(i), default: []].append(i) }
-        let groups = clusters.values.filter { $0.count > 1 }.map { idx in
+        // Complete-linkage: a photo joins a group only when it is similar to every photo already in it.
+        // Chaining (A~B and B~C pulling in an unrelated C) is what union-find did before, and it merged
+        // different shots into one group.
+        var adj = Array(repeating: Set<Int>(), count: n)
+        for i in 0..<n { for j in edges[i] { adj[i].insert(j); adj[j].insert(i) } }
+        var assigned = Array(repeating: false, count: n)
+        var clusters: [[Int]] = []
+        for i in 0..<n where prints[i] != nil && !assigned[i] {
+            var cluster = [i]
+            assigned[i] = true
+            for j in adj[i].sorted() where !assigned[j] {
+                if cluster.allSatisfy({ adj[j].contains($0) }) {
+                    cluster.append(j)
+                    assigned[j] = true
+                }
+            }
+            if cluster.count > 1 { clusters.append(cluster) }
+        }
+        let groups = clusters.map { idx in
             DuplicateGroup(files: idx.map { DuplicateFile(url: entries[$0].url, modified: entries[$0].modified, size: entries[$0].size) },
                            identical: false)
         }

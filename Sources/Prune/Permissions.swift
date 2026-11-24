@@ -6,14 +6,18 @@ enum GatedAction { case scan, map }
 /// Everything the scans need from macOS. Full Disk Access also covers Documents, Desktop,
 /// Downloads, Mail and Messages, so it is the only one to check.
 enum AppPermissions {
-    static var allGranted: Bool { FullDiskAccess.granted }
+    /// Set when the user chooses "Scan anyway" in the gate. Lasts until the app quits, so the gate
+    /// shows again on the next launch and results from this run are not mistaken for complete ones.
+    static var scanAnyway = false
+    static var allGranted: Bool { FullDiskAccess.granted || scanAnyway }
+    static var fullDiskAccessMissing: Bool { !FullDiskAccess.granted }
 }
 
 /// Shown instead of starting a scan while a required permission is missing.
 /// Re-checks when the user comes back from System Settings and then starts the scan itself.
 struct PermissionGate: View {
     @Environment(Store.self) private var store
-    @State private var granted = AppPermissions.allGranted
+    @State private var granted = FullDiskAccess.granted
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -21,7 +25,7 @@ struct PermissionGate: View {
                 Text("Allow Prune to see your disk")
                     .font(Theme.sans(17, .semibold))
                     .foregroundStyle(Theme.text)
-                Text("A scan needs Full Disk Access. Without it macOS hides Mail, Messages, Safari data and some caches, and the results would be incomplete.")
+                Text("A scan needs Full Disk Access. Without it macOS hides Mail, Messages, Safari data and some caches. You can scan anyway, and the results will say they are incomplete.")
                     .font(Theme.sans(13))
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -58,6 +62,11 @@ struct PermissionGate: View {
                         .buttonStyle(.primary)
                         .keyboardShortcut(.defaultAction)
                 } else {
+                    Button("Scan anyway") {
+                        AppPermissions.scanAnyway = true
+                        store.resumeGatedAction()
+                    }
+                    .buttonStyle(.secondary)
                     Button("Check again") { recheck() }
                         .buttonStyle(.secondary)
                     Button("Open Settings") { FullDiskAccess.openSettings() }
@@ -76,7 +85,7 @@ struct PermissionGate: View {
     }
 
     private func recheck() {
-        granted = AppPermissions.allGranted
+        granted = FullDiskAccess.granted
         if granted { store.resumeGatedAction() }
     }
 }

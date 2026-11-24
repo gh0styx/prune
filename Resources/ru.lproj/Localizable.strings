@@ -533,3 +533,13 @@
 "Outside the folders Prune cleans." = "Вне папок, которые Prune чистит.";
 "Prune has no permission for this folder. Remove it by hand in Finder." = "У Prune нет прав на эту папку. Удалите её вручную в Finder.";
 "Not removed" = "Не удалено";
+"%@ not counted" = "%@ не учитывается";
+"Shown for information. Prune does not remove these, so they are not in the reclaimable total." = "Только для информации. Prune это не удаляет, поэтому в сумму «можно освободить» не входит.";
+"%lld snapshots removed" = "Удалено снимков: %lld";
+"%@ free now" = "свободно %@";
+"Trash" = "Корзина";
+"Empty with Finder. Space is freed only after emptying." = "Очистка через Finder. Место освобождается только после очистки.";
+"Removed with xcrun simctl. Xcode can download it again." = "Удаляется через xcrun simctl. Xcode скачает его снова при необходимости.";
+"Prune only reports this. It is not removed. Click to show it in Finder." = "Prune только показывает это и не удаляет. Нажмите, чтобы показать в Finder.";
+"Scan anyway" = "Всё равно сканировать";
+"A scan needs Full Disk Access. Without it macOS hides Mail, Messages, Safari data and some caches. You can scan anyway, and the results will say they are incomplete." = "Для скана нужен полный доступ к диску. Без него macOS скрывает данные Почты, Сообщений, Safari и часть кэшей. Можно сканировать и без него, тогда результат будет помечен как неполный.";

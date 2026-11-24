@@ -82,6 +82,8 @@ final class Store {
     func items(_ c: CategoryID) -> [CleanItem] { items[c] ?? [] }
     /// Report-only items are shown with their size but are not part of anything Prune would free.
     func size(_ c: CategoryID) -> Int64 { items(c).filter { !$0.reportOnly }.reduce(0) { $0 + $1.size } }
+    /// Size of the report-only rows in a category: shown for information, never counted in what Prune frees.
+    func reportOnlySize(_ c: CategoryID) -> Int64 { items(c).filter(\.reportOnly).reduce(0) { $0 + $1.size } }
     /// Items Prune can remove and that are selected. Report-only rows never count.
     func selected(in c: CategoryID) -> [CleanItem] { items(c).filter { !$0.reportOnly && selection.contains($0.id) } }
 

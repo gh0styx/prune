@@ -121,6 +121,9 @@ struct DuplicatesView: View {
                 .font(Theme.mono(11)).foregroundStyle(Theme.faint)
                 .lineLimit(1).truncationMode(.middle)
                 .frame(maxWidth: 480)
+            Button("Cancel") { current.progress.cancel() }
+                .buttonStyle(.secondary)
+                .padding(.top, 6)
         }
         .padding(.bottom, 60)
     }

@@ -100,6 +100,12 @@ struct CategoryView: View {
                     Text(plural(items.count, .item)).foregroundStyle(Theme.muted)
                     Text("·").foregroundStyle(Theme.faint)
                     Text(Fmt.bytes(store.size(category))).foregroundStyle(Theme.text)
+                    if store.reportOnlySize(category) > 0 {
+                        Text("·").foregroundStyle(Theme.faint)
+                        Text(trf("%@ not counted", Fmt.bytes(store.reportOnlySize(category))))
+                            .foregroundStyle(Theme.muted)
+                            .help(tr("Shown for information. Prune does not remove these, so they are not in the reclaimable total."))
+                    }
                 }
                 .font(Theme.mono(12))
             }
@@ -191,11 +197,14 @@ struct ItemRow: View {
             HStack(spacing: 12) {
                 if item.reportOnly {
                     // Shown for its size only: no checkbox, the location line says where to remove it.
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.faint)
-                        .frame(width: 15)
-                        .help(tr("Prune only reports this. It is not removed."))
+                    Button { NSWorkspace.shared.activateFileViewerSelecting([item.url]) } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 13))
+                            .foregroundStyle(Theme.faint)
+                            .frame(width: 15)
+                    }
+                    .buttonStyle(.plain)
+                    .help(tr("Prune only reports this. It is not removed. Click to show it in Finder."))
                 } else {
                     CheckBox(state: selected)
                 }
