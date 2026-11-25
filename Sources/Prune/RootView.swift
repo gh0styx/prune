@@ -231,6 +231,12 @@ struct ConfirmSheet: View {
                     .font(Theme.sans(13))
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
+                if items.contains(where: \.checkFirst) {
+                    Text("Some of these hold settings, sessions or work. Removing them can sign you out or drop unsaved changes. Check each one first.")
+                        .font(Theme.sans(13, .medium))
+                        .foregroundStyle(Theme.amber)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .padding(24)
 

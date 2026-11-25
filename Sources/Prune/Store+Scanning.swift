@@ -167,11 +167,11 @@ extension Store {
     private func apply(_ cats: [CategoryID], _ result: [CleanItem]) {
         withAnimation(.snappy(duration: 0.5)) {
             for c in cats {
-                let list = result.filter { $0.category == c && ($0.command != nil || $0.reportOnly || Trasher.isSafe($0.url)) && !isIgnored($0) }
+                let list = result.filter { $0.category == c && ($0.command != nil || $0.reportOnly || $0.checkFirst || Trasher.isSafe($0.url)) && !isIgnored($0) }
                     .sorted { $0.size > $1.size }
                 selection.subtract(items(c).map(\.id))
                 items[c] = list
-                selection.formUnion(list.filter { !$0.reportOnly && c.selectedByDefault($0) }.map(\.id))
+                selection.formUnion(list.filter { !$0.reportOnly && !$0.checkFirst && c.selectedByDefault($0) }.map(\.id))
                 pending.remove(c)
             }
         }
@@ -186,13 +186,14 @@ extension Store {
     }
 
     func setAll(_ c: CategoryID, _ on: Bool) {
-        let ids = items(c).filter { !$0.reportOnly }.map(\.id)
+        // "Select all" leaves the check-first items alone: they are ticked one by one.
+        let ids = items(c).filter { !$0.reportOnly && !$0.checkFirst }.map(\.id)
         if on { selection.formUnion(ids) } else { selection.subtract(ids) }
     }
 
     func selectStale(_ c: CategoryID) {
         selection.subtract(items(c).map(\.id))
-        selection.formUnion(items(c).filter { $0.isStale && !$0.reportOnly }.map(\.id))
+        selection.formUnion(items(c).filter { $0.isStale && !$0.reportOnly && !$0.checkFirst }.map(\.id))
     }
 
 }

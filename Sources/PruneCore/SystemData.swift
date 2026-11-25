@@ -12,8 +12,9 @@ enum SystemData {
     static func scan() -> [CleanItem] {
         // Simulator runtimes are removable when Xcode's simctl can list them; otherwise they stay report-only.
         let runtimes = simulatorRuntimeItems()
-        return snapshotItems() + groupContainerCaches() + appSupportCaches() + codeSignCloneItems()
-            + runtimes + trashItems() + reportOnlyItems(hideSimulatorVolumes: !runtimes.isEmpty)
+        return snapshotItems() + groupContainerCaches() + appSupportCaches() + containerCaches() + codeSignCloneItems()
+            + runtimes + trashItems() + checkFirstItems() + largeSupportFolders() + leftoverContainerItems()
+            + reportOnlyItems(hideSimulatorVolumes: !runtimes.isEmpty)
     }
 
     // MARK: Trash
@@ -143,19 +144,165 @@ enum SystemData {
         "CachedData", "CachedExtensionVSIXs",
     ]
 
+    /// Virtual machine images that an app downloads again when it needs them (Claude's sandbox images).
+    static let rebuildableVMFolders: [String: [String]] = ["Claude": ["vm_bundles"]]
+
+    /// Caches that sandboxed apps keep in their own container (~/Library/Containers/<id>/Data/Library/Caches).
+    /// Each app rebuilds them when it needs them.
+    static func containerCaches() -> [CleanItem] {
+        let root = home.appending(path: "Library/Containers")
+        var items: [CleanItem] = []
+        for container in children(of: root) {
+            let caches = container.appending(path: "Data/Library/Caches")
+            guard FileManager.default.fileExists(atPath: caches.path) else { continue }
+            let item = measured(caches, name: "\(container.lastPathComponent) · Caches", kind: "App cache",
+                                location: "~/Library/Containers/\(container.lastPathComponent) · \(tr("the app rebuilds it"))")
+            if item.size > minimumBytes { items.append(item) }
+        }
+        return items
+    }
+
     static func appSupportCaches() -> [CleanItem] {
         let root = home.appending(path: "Library/Application Support")
         var items: [CleanItem] = []
         for app in children(of: root) {
+            let appName = app.lastPathComponent
             for folder in appCacheFolders.sorted() {
                 let url = app.appending(path: folder)
                 guard FileManager.default.fileExists(atPath: url.path) else { continue }
-                let item = measured(url, name: "\(app.lastPathComponent) · \(folder)", kind: "App cache",
-                                    location: "~/Library/Application Support/\(app.lastPathComponent)")
+                let item = measured(url, name: "\(appName) · \(folder)", kind: "App cache",
+                                    location: "~/Library/Application Support/\(appName) · \(tr("the app rebuilds it"))")
+                if item.size > minimumBytes { items.append(item) }
+            }
+            for folder in rebuildableVMFolders[appName] ?? [] {
+                let url = app.appending(path: folder)
+                guard FileManager.default.fileExists(atPath: url.path) else { continue }
+                let item = measured(url, name: "\(appName) · \(folder)", kind: tr("VM images"),
+                                    location: "~/Library/Application Support/\(appName) · \(tr("downloaded again when needed"))")
                 if item.size > minimumBytes { items.append(item) }
             }
         }
         return items
+    }
+
+
+    // MARK: Check first
+
+    /// Folders the user may choose to remove, unselected by default. The paths are the only ones Prune allows
+    /// for these items, so nothing else under the home folder is touched through this list.
+    static let checkFirstPlaces: [(path: String, name: String, kind: String, hint: String)] = [
+        (".cursor", "Cursor data", "App data", "Check before removing: Cursor extensions and settings"),
+        (".claude", "Claude Code data", "App data", "Check before removing: Claude Code sessions and settings"),
+        (".vscode/extensions", "VS Code extensions", "App data", "Check before removing: extensions come back from the marketplace"),
+        (".local", "Local tools", "Tools", "Check before removing: tools installed with pipx or uv"),
+        (".ollama/models", "Ollama models", "AI models", "Check before removing: models come back with ollama pull"),
+        (".cache/codex-runtimes", "Codex runtimes", "Tool runtimes", "Check before removing: the Codex tool downloads them again"),
+        ("Library/Developer/Xcode/Archives", "Xcode archives", "Archives", "Check before removing: your build archives"),
+        ("Library/Application Support/Cursor/snapshots", "Cursor snapshots", "App data", "Check before removing: may hold edits you can still undo"),
+        ("Library/Application Support/Claude/scratch-workspaces", "Claude scratch workspaces", "App data", "Check before removing: may hold work from agent sessions"),
+    ]
+
+    /// Absolute paths the check-first items may be removed from: the fixed places above, and the folders
+    /// of apps in Application Support, Containers and Group Containers (for large folders and leftovers).
+    static var checkFirstRoots: [String] {
+        checkFirstPlaces.map { home.appending(path: $0.path).path }
+            + ["Library/Application Support", "Library/Containers", "Library/Group Containers", "Library/Caches",
+               "Library/Preferences", "Library/Saved Application State", "Library/HTTPStorages", "Library/WebKit",
+               "Library/Logs"]
+                .map { home.appending(path: $0).path }
+    }
+
+    /// Folders in Application Support that are big (over 500 MB) and hold no cache the cleaner already offers.
+    /// Shown as check-first: an app's data may be settings or sessions.
+    static func largeSupportFolders() -> [CleanItem] {
+        let root = home.appending(path: "Library/Application Support")
+        let known = checkFirstPlaces.map { home.appending(path: $0.path).path }
+        var items: [CleanItem] = []
+        for app in children(of: root) {
+            let path = app.path
+            // Skip folders that hold one of the fixed places, or that hold caches already offered above.
+            if known.contains(where: { $0 == path || $0.hasPrefix(path + "/") }) { continue }
+            let holdsCache = appCacheFolders.contains { FileManager.default.fileExists(atPath: app.appending(path: $0).path) }
+            if holdsCache { continue }
+            let item0 = measured(app, name: app.lastPathComponent, kind: tr("App data"),
+                                 location: "~/Library/Application Support · " + tr("Check before removing: this app's data, settings or sessions"))
+            var item = item0
+            item.checkFirst = true
+            if item.size > 500 * 1024 * 1024 { items.append(item) }
+        }
+        return items
+    }
+
+    /// Installed apps' bundle identifiers, read from the apps in the usual folders.
+    static func installedBundleIDs() -> Set<String> {
+        var ids = Set<String>()
+        let folders = ["/Applications", "/System/Applications", home.appending(path: "Applications").path, "/Applications/Utilities"]
+        for folder in folders {
+            for app in children(of: URL(fileURLWithPath: folder)) where app.pathExtension == "app" {
+                if let id = Bundle(url: app)?.bundleIdentifier { ids.insert(id.lowercased()) }
+            }
+        }
+        return ids
+    }
+
+    /// Leftovers of apps that are no longer installed, found by their bundle identifier in the places apps
+    /// leave data: Containers, Group Containers, Caches, Preferences, Saved Application State, HTTPStorages,
+    /// WebKit and Logs. Grouped by identifier, so one app's leftovers show together. Check-first.
+    static func leftoverContainerItems() -> [CleanItem] {
+        let installed = installedBundleIDs()
+        let places: [(folder: String, kind: String)] = [
+            ("Library/Containers", tr("Container")),
+            ("Library/Group Containers", tr("Group container")),
+            ("Library/Caches", tr("Cache")),
+            ("Library/Preferences", tr("Preferences")),
+            ("Library/Saved Application State", tr("Saved state")),
+            ("Library/HTTPStorages", tr("Web storage")),
+            ("Library/WebKit", tr("WebKit data")),
+            ("Library/Logs", tr("Logs")),
+        ]
+        // Bundle identifier from a file or folder name: drops "group.", a ".plist" or ".savedState" suffix.
+        func identifier(_ name: String) -> String {
+            var id = name.lowercased()
+            if id.hasPrefix("group.") { id = String(id.dropFirst(6)) }
+            for suffix in [".plist", ".savedstate"] where id.hasSuffix(suffix) { id = String(id.dropLast(suffix.count)) }
+            return id
+        }
+        var groups: [String: [(url: URL, kind: String)]] = [:]
+        for place in places {
+            for entry in children(of: home.appending(path: place.folder)) {
+                let raw = entry.lastPathComponent
+                let id = identifier(raw)
+                guard id.contains("."), !id.hasPrefix("com.apple."), !id.contains(".apple."),
+                      !id.hasPrefix("apple.") else { continue }
+                // Still installed: the identifier, or a name that contains it, belongs to an app on this Mac.
+                if installed.contains(where: { id == $0 || id.contains($0) || $0.contains(id) }) { continue }
+                groups[id, default: []].append((entry, place.kind))
+            }
+        }
+        var items: [CleanItem] = []
+        for (id, members) in groups {
+            let measuredMembers = members.map { member -> CleanItem in
+                measured(member.url, name: "\(id) · \(member.kind)", kind: tr("Leftover from an app"),
+                         location: "~/\(member.url.deletingLastPathComponent().lastPathComponent) · " + tr("Check before removing: the app is no longer installed"))
+            }
+            // A group is shown only when it is worth it; its members are removed together when ticked.
+            guard measuredMembers.reduce(0, { $0 + $1.size }) > 50 * 1024 * 1024 else { continue }
+            for var item in measuredMembers {
+                item.checkFirst = true
+                if item.size > 0 { items.append(item) }
+            }
+        }
+        return items.sorted { $0.name < $1.name }
+    }
+
+    static func checkFirstItems() -> [CleanItem] {
+        checkFirstPlaces.compactMap { place -> CleanItem? in
+            let url = home.appending(path: place.path)
+            guard FileManager.default.fileExists(atPath: url.path) else { return nil }
+            var item = measured(url, name: place.name, kind: place.kind, location: Fmt.tilde(url.path) + " · " + tr(place.hint))
+            item.checkFirst = true
+            return item.size > minimumBytes ? item : nil
+        }
     }
 
     // MARK: Report only

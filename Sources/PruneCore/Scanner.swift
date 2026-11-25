@@ -424,9 +424,14 @@ enum Trasher {
     /// Refuses anything outside the home folder or too close to its root.
     /// `leftover` additionally allows a single entry directly inside one of the ~/Library folders where
     /// apps keep data; only the uninstall flow sets it, for files it matched to that app.
-    static func isSafe(_ url: URL, leftover: Bool = false) -> Bool {
+    static func isSafe(_ url: URL, leftover: Bool = false, checkFirst: Bool = false) -> Bool {
         // Folders the user chose to ignore are never removed, by either front end.
         if IgnoreList.contains(url) { return false }
+        // Check-first folders (editor extensions, app archives, models) are allowed only inside their own folders.
+        if checkFirst {
+            let p = url.resolvingSymlinksInPath().standardizedFileURL.path
+            return SystemData.checkFirstRoots.contains { p == $0 || p.hasPrefix($0 + "/") }
+        }
         let home = FileManager.default.homeDirectoryForCurrentUser.standardizedFileURL.path
         // Resolve symlinks first: /Volumes/Macintosh HD points back at the startup disk.
         let path = url.resolvingSymlinksInPath().standardizedFileURL.path
@@ -530,7 +535,7 @@ enum Trasher {
                                                hint: item.location, id: item.id))
                 continue
             }
-            guard isSafe(item.url, leftover: item.isLeftover) else {
+            guard isSafe(item.url, leftover: item.isLeftover, checkFirst: item.checkFirst) else {
                 result.failures.append(Failure(name: item.name, reason: tr("Outside the folders Prune cleans."), id: item.id))
                 continue
             }

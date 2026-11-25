@@ -141,6 +141,9 @@ struct CleanItem: Identifiable, Hashable, Sendable {
     var isLeftover = false
     /// Shown with its size only (VM disks, system logs). Never removed, and not counted as reclaimable.
     var reportOnly = false
+    /// Data the user may want to keep (editor extensions, app archives, models). Never selected by default and
+    /// only removed when the user ticks it; the confirmation says so first.
+    var checkFirst = false
 
     var id: String { url.absoluteString }
 }

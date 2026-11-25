@@ -24,7 +24,7 @@ enum Catalog {
 
     /// Hidden paths from Settings, and the safety rules every removal goes through.
     static func keep(_ items: [CleanItem]) -> [CleanItem] {
-        items.filter { ($0.command != nil || $0.reportOnly || Trasher.isSafe($0.url)) && !isIgnored($0) }
+        items.filter { ($0.command != nil || $0.reportOnly || $0.checkFirst || Trasher.isSafe($0.url)) && !isIgnored($0) }
             .sorted { $0.size > $1.size }
     }
 

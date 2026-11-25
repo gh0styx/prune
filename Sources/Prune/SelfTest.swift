@@ -88,7 +88,7 @@ enum SelfTest {
         // Sanity: every item a scanner offers must pass the trash safety check (Docker items excepted).
         let all = scanner.scanProjects() + scanner.scanXcode() + scanner.scanPackageCaches()
             + scanner.scanAppCaches() + scanner.scanLogs() + result.largeFiles
-        let unsafe = all.filter { $0.command == nil && !Trasher.isSafe($0.url) }
+        let unsafe = all.filter { $0.command == nil && !$0.checkFirst && !Trasher.isSafe($0.url) }
         print("\nSafety: \(all.count) file items checked, \(unsafe.count) would be refused by Trasher")
         for u in unsafe.prefix(5) { print("    refused: \(u.url.path)") }
 
