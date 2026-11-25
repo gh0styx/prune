@@ -39,7 +39,28 @@ enum HistoryFile {
         guard let data = try? Data(contentsOf: url) else { return [] }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        return (try? decoder.decode([HistoryEntry].self, from: data)) ?? []
+        let entries = (try? decoder.decode([HistoryEntry].self, from: data)) ?? []
+        return reconciled(entries)
+    }
+
+    /// Items marked "in the Trash" whose file is gone (the user emptied the Trash) can no longer be put back,
+    /// so they become "deleted" and the file is not offered again.
+    static func reconciled(_ entries: [HistoryEntry]) -> [HistoryEntry] {
+        let fm = FileManager.default
+        var changed = false
+        let result = entries.map { entry -> HistoryEntry in
+            var entry = entry
+            entry.items = entry.items.map { item in
+                guard item.state == .inTrash, let trash = item.trashPath, !fm.fileExists(atPath: trash) else { return item }
+                var gone = item
+                gone.state = .deleted
+                changed = true
+                return gone
+            }
+            return entry
+        }
+        if changed { save(result) }
+        return result
     }
 
     static func save(_ entries: [HistoryEntry]) {

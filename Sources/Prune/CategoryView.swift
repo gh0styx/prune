@@ -114,9 +114,14 @@ struct CategoryView: View {
 
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
-                    Button { store.setAll(category, allState != true) } label: { CheckBox(state: allState) }
-                        .buttonStyle(.plain)
-                        .disabled(removable.isEmpty)
+                    Button { store.setAll(category, allState != true) } label: {
+                        CheckBox(state: allState)
+                            .padding(6)                 // a bigger click target than the box itself
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(removable.isEmpty)
+                    .padding(.leading, -6)
                     sortHeader("Name", .name)
                     Spacer()
                     sortHeader("Last activity", .date).frame(width: 130, alignment: .leading)
