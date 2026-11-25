@@ -3,13 +3,13 @@
     <channel>
         <title>Prune</title>
         <item>
-            <title>0.1.6</title>
-            <pubDate>Mon, 23 Nov 2026 16:26:30 +0200</pubDate>
-            <sparkle:version>9</sparkle:version>
-            <sparkle:shortVersionString>0.1.6</sparkle:shortVersionString>
+            <title>0.1.7</title>
+            <pubDate>Wed, 25 Nov 2026 13:47:21 +0200</pubDate>
+            <sparkle:version>10</sparkle:version>
+            <sparkle:shortVersionString>0.1.7</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/gh0styx/prune/releases/download/v0.1.6/Prune-0.1.6.dmg" length="5018099" type="application/octet-stream" sparkle:edSignature="pyHSvK5f5vOik0iwT7RbRMFilqLF8sDBdOx9VLm9iUJYbeeP1r9a9bJ0lMGSK/r+FqdYXTo1OkAYZ47VLVy6BQ=="/>
+            <enclosure url="https://github.com/gh0styx/prune/releases/download/v0.1.7/Prune-0.1.7.dmg" length="5042668" type="application/octet-stream" sparkle:edSignature="5PkQJNnlExiQz2lhsT3Nk1XkOYu8AbL3HacYaTD21Nfl1eEjNksNQAdrsn3DYUkea7wh41GMO+Vo5dVh+1JOBQ=="/>
         </item>
     </channel>
 </rss>
