@@ -135,10 +135,12 @@ enum SystemData {
 
     // MARK: Electron and Chromium caches
 
-    /// Cache folders Electron and Chromium apps keep directly under ~/Library/Application Support/<app>/.
+    /// Cache folders Electron, Chromium and VS Code apps keep directly under ~/Library/Application Support/<app>/.
     /// Each one is rebuilt when the app next starts. Only these exact names are ever removed.
     static let appCacheFolders: Set<String> = [
         "Cache", "Code Cache", "GPUCache", "DawnCache", "DawnGraphiteCache", "DawnWebGPUCache",
+        // VS Code and Cursor: compiled extension data and downloaded extension packages, fetched again on demand.
+        "CachedData", "CachedExtensionVSIXs",
     ]
 
     static func appSupportCaches() -> [CleanItem] {

@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// One thing Prune removed, and where it went.
@@ -86,9 +87,26 @@ enum TrashOps {
             try fm.moveItem(at: URL(fileURLWithPath: trash), to: original)
             return true
         } catch {
+            // Protected folders (such as /Applications) need Finder, which asks for the password or Touch ID.
+            if moveViaFinder(trash, toFolder: original.deletingLastPathComponent().path) { return true }
             NSLog("Prune: restore failed for \(item.originalPath): \(error)")
             return false
         }
+    }
+
+    /// Finder moves the item back (it can write to folders that only an administrator may change).
+    private static func moveViaFinder(_ path: String, toFolder folder: String) -> Bool {
+        func quoted(_ s: String) -> String {
+            s.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
+        }
+        let source = "tell application \"Finder\" to move POSIX file \"\(quoted(path))\" to POSIX file \"\(quoted(folder))\""
+        var ok = false
+        let run = {
+            var info: NSDictionary?
+            ok = NSAppleScript(source: source)?.executeAndReturnError(&info) != nil && info == nil
+        }
+        if Thread.isMainThread { run() } else { DispatchQueue.main.sync(execute: run) }
+        return ok
     }
 
     /// Permanently deletes exactly what Prune put in the Trash (never anything else in there).
