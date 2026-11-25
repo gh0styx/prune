@@ -198,6 +198,10 @@ struct Toast: View {
                 Button("Undo") { store.restore(entry) }
                     .buttonStyle(PruneButtonStyle(kind: .ghost, height: 26))
             }
+            if let link = store.toastLink {
+                Button("Open App Management") { NSWorkspace.shared.open(link) }
+                    .buttonStyle(PruneButtonStyle(kind: .ghost, height: 26))
+            }
         }
         .padding(.leading, 16)
         .padding(.trailing, 8)

@@ -34,9 +34,10 @@ struct SettingsView: View {
                 Spacer()
             }
             .padding(.horizontal, 8)
-            .frame(width: 200)
+            .frame(width: Sidebar.width)
             .frame(maxHeight: .infinity)
-            .background(VisualEffect().ignoresSafeArea())
+            // The same glass as the main window's sidebar.
+            .background(SidebarGlass().ignoresSafeArea())
 
             Rectangle().fill(Theme.text.opacity(0.08)).frame(width: 1).ignoresSafeArea()
 

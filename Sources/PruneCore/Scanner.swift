@@ -486,6 +486,8 @@ enum Trasher {
         /// The file system refused (permissions, not a protected system item): the cleaner may retry with
         /// administrator rights.
         var needsAdmin = false
+        /// A System Settings pane that fixes the refusal, shown as a button next to the message.
+        var settingsURL: String? = nil
     }
 
     /// The command that clears one command item, and a hint when the failure is about permissions.

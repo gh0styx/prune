@@ -16,6 +16,8 @@ final class Store {
     var toast: String?
     /// The current toast is the one after cleaning, which offers "Free space now" and "Undo".
     var toastHasActions = false
+    /// A System Settings pane to offer with the current toast (when macOS protects something), or nil.
+    var toastLink: URL? = nil
     /// Live scan feedback: folders looked at and the one being read right now.
     var scanLive: (files: Int, path: String) = (0, "")
     var scanStarted: Date?

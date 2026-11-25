@@ -63,6 +63,7 @@ extension Store {
                     toast = (toast ?? "") + " · " + trf("%lld snapshots removed", snapshotsRemoved)
                         + " · " + trf("%@ free now", Fmt.bytes(disk.free))
                 }
+                toastLink = result.failures.compactMap(\.settingsURL).first.flatMap(URL.init(string:))
                 if let first = result.failures.first {
                     // Say why, and what to do, instead of only counting the skipped items.
                     var lines = [trf("Not removed: %@ — %@", first.name, first.reason)]

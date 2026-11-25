@@ -460,7 +460,6 @@
 "Checking…" = "Проверяем…";
 "Checked %@" = "Проверено %@";
 "Firewall" = "Брандмауэр";
-"On" = "Вкл.";
 "Only lets apps from identified developers open." = "Разрешает открывать только приложения от проверенных разработчиков.";
 "System Integrity Protection keeps system files read-only." = "Защита целостности системы не даёт изменять системные файлы.";
 "Apple's built-in malware signatures, updated in the background." = "Встроенная база вредоносного ПО от Apple, обновляется в фоне.";
@@ -546,8 +545,20 @@
 "Needs an administrator to remove." = "Нужны права администратора для удаления.";
 "Prune will ask for your administrator password to try again." = "Prune запросит пароль администратора и попробует снова.";
 "Administrator access was not granted." = "Доступ администратора не выдан.";
-"Select it again and clean to enter the administrator password." = "Выберите его снова и очистите, чтобы ввести пароль администратора.";
 "macOS protects this app's data, so even an administrator can't move it." = "macOS защищает данные этого приложения, поэтому даже администратор не может их переместить.";
 "Allow Prune in System Settings → Privacy & Security → App Management, or quit the app and try again." = "Разрешите Prune в Системных настройках → Конфиденциальность и безопасность → Управление приложениями, или закройте приложение и попробуйте снова.";
 "Not removed" = "Не удалено";
-"No answer from the administrator task." = "Администратор не вернул ответ.";
+
+"Prune needs your permission to move these items to the Trash." = "Prune нужно ваше разрешение, чтобы переместить эти элементы в Корзину.";
+"Allow Prune's helper in System Settings → General → Login Items, then clean again." = "Разрешите помощник Prune в Системных настройках → Основные → Объекты входа, затем очистите снова.";
+"Select it again and clean to confirm with Touch ID or your password." = "Выберите его снова и очистите, чтобы подтвердить Touch ID или паролем.";
+"No answer from the helper." = "Помощник не вернул ответ.";
+"App Management" = "Управление приложениями";
+"Lets Prune move protected apps and app data. Finder does this with Touch ID, so this is usually not needed." = "Позволяет Prune переносить защищённые приложения и их данные. Finder делает это с Touch ID, поэтому обычно это не нужно.";
+"Touch ID for protected items" = "Touch ID для защищённых объектов";
+"On. macOS asks for Touch ID when Prune needs to move something Finder does not move." = "Включено. macOS запросит Touch ID, когда Prune нужно перенести то, что Finder не переносит.";
+"Turn Prune on in System Settings → General → Login Items." = "Включите Prune в Системных настройках → Основные → Объекты входа.";
+"Set up the first time it is needed. macOS then asks you to turn it on." = "Настроится при первой необходимости. Затем macOS попросит включить его.";
+"Open Login Items" = "Открыть объекты входа";
+"Open App Management" = "Открыть управление приложениями";
+"On" = "Вкл.";

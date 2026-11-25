@@ -158,6 +158,13 @@ struct PermissionSettings: View {
                     Button("Open Settings") { FullDiskAccess.openSettings() }.buttonStyle(.secondary)
                 }
             }
+            SettingRow(title: "App Management",
+                       detail: "Lets Prune move protected apps and app data. Finder does this with Touch ID, so this is usually not needed.") {
+                Button("Open Settings") {
+                    if let url = URL(string: AppPermissionLinks.appManagement) { NSWorkspace.shared.open(url) }
+                }
+                .buttonStyle(.secondary)
+            }
             SettingRow(title: "Docker", detail: dockerDetail) {
                 Badge(text: dockerBadge.0, color: dockerBadge.1)
             }

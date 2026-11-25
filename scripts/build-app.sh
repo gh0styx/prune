@@ -50,6 +50,7 @@ if [ "$TEST_BUILD" = 1 ]; then
   $PB -c "Set :CFBundleName PruneTest" -c "Set :CFBundleDisplayName PruneTest" \
       -c "Set :CFBundleIdentifier com.example.prune.test" "$APP/Contents/Info.plist"
   $PB -c "Delete :SUFeedURL" "$APP/Contents/Info.plist" 2>/dev/null || true
+  $PB -c "Set :CFBundleVersion 10.$(date +%s)" "$APP/Contents/Info.plist"
 fi
 cp "$ICON_DIR/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 cp "$ICON_DIR/car/Assets.car" "$APP/Contents/Resources/Assets.car"
