@@ -24,12 +24,28 @@ A treemap of your whole home folder and Applications. Click any block to go deep
 | Package caches | npm, pnpm, Yarn, Bun, pip, uv, Homebrew, Cargo, Gradle, CocoaPods, Go, Playwright |
 | App caches | `~/Library/Caches` (Apple's own caches are skipped) |
 | Logs | `~/Library/Logs` |
+| Downloads | Installers you already used and files untouched for 90+ days |
+| Messenger caches | Photos, videos and files kept by messengers (they download again when you open a chat) |
+| Mail attachments | Attachments Mail saved when you opened them |
+| iOS backups | Local backups of iPhone and iPad (check you have a newer one first) |
+| System data | Time Machine snapshots and app caches in Group Containers |
 
 **Stale projects.** Prune reads each project's last git commit. Projects untouched for 90+ days are marked stale and their dependencies are pre-selected.
 
 **Safe by default.** Nothing is deleted. Everything goes to the Trash, so you can put it back. Paths outside your home folder are refused.
 
 Developer categories can be hidden in Settings or during the welcome tour ("Clean my Mac" vs "I write code").
+
+## Tools
+
+- **Large files.** Files over 100 MB (configurable) in your home folder. Not junk by default, so look before you remove.
+- **Duplicates.** Identical files and similar photos. Keep one, move the rest to the Trash.
+- **Security check.** Startup items, browser extensions and known adware, plus the Mac's built-in protections. Not an antivirus.
+- **Login items.** Apps and helpers that start on their own when you log in.
+- **Maintenance.** Small fixes that keep macOS running smoothly. Some ask for your password.
+- **Dev servers.** Local servers and processes listening on ports. Stop the ones you forgot.
+- **Apps.** Remove apps together with the files they leave in your Library.
+- **History.** Earlier cleanups. Items still in the Trash can be freed or put back.
 
 ## Menu bar
 
@@ -81,7 +97,6 @@ The app icon is drawn in code (`Sources/Prune/IconArt.swift`). The build script 
 ## Roadmap
 
 - Scheduled scans with a "you have 20 GB to clean" notification
-- Ignore list
 - Notarized release and Homebrew cask
 
 ## License

@@ -60,11 +60,21 @@ struct Scanner: Sendable {
             }
         }
 
+        // Each project's last git commit is a separate `git log` process. Run them in parallel instead of one
+        // after another; the shared cache inside GitActivity is locked, so repos with several projects still ask once.
         let git = GitActivity(home: home)
+        let wanted = found.indices.filter { sizes[$0].unique + sizes[$0].shared > 0 }
+        var lastDates = [Date?](repeating: nil, count: found.count)
+        lastDates.withUnsafeMutableBufferPointer { buf in
+            DispatchQueue.concurrentPerform(iterations: wanted.count) { k in
+                let i = wanted[k]
+                buf[i] = git.lastActivity(for: found[i].url.deletingLastPathComponent())
+            }
+        }
         var items: [CleanItem] = []
         for (i, f) in found.enumerated() where sizes[i].unique + sizes[i].shared > 0 {
             let project = f.url.deletingLastPathComponent()
-            let last = git.lastActivity(for: project)
+            let last = lastDates[i]
             items.append(CleanItem(
                 url: f.url, category: f.category, name: project.lastPathComponent, kind: f.kind,
                 location: Fmt.tilde(project.path), size: sizes[i].unique, lastActivity: last,
@@ -375,6 +385,7 @@ enum Sizer {
 final class GitActivity: @unchecked Sendable {
     private let home: URL
     private var cache: [String: Date?] = [:]
+    private let lock = NSLock()
 
     init(home: URL) { self.home = home }
 
@@ -382,9 +393,14 @@ final class GitActivity: @unchecked Sendable {
         var dir = project
         while dir.path.count > home.path.count {
             if FileManager.default.fileExists(atPath: dir.appending(path: ".git").path) {
-                if let cached = cache[dir.path] { return cached }
+                lock.lock()
+                let known = cache[dir.path]
+                lock.unlock()
+                if let cached = known { return cached }
                 let date = commitDate(dir) ?? modified(project)
+                lock.lock()
                 cache[dir.path] = date
+                lock.unlock()
                 return date
             }
             dir = dir.deletingLastPathComponent()
@@ -467,12 +483,26 @@ enum Trasher {
         var hint: String? = nil
         /// The item's id, so the UI can mark the row that was not removed.
         var id: String? = nil
+        /// The file system refused (permissions, not a protected system item): the cleaner may retry with
+        /// administrator rights.
+        var needsAdmin = false
     }
 
     /// The command that clears one command item, and a hint when the failure is about permissions.
     static func commandHint(for item: CleanItem) -> String? {
         guard let command = item.command, command.contains("deletelocalsnapshots"), let stamp = command.last else { return nil }
         return trf("Needs an administrator. Run in Terminal: %@", "sudo tmutil deletelocalsnapshots \(stamp)")
+    }
+
+    /// True when macOS refused the move because of file permissions (not a missing file or a full disk).
+    static func isPermissionDenied(_ error: Error) -> Bool {
+        var current: NSError? = error as NSError
+        while let e = current {
+            if e.domain == NSCocoaErrorDomain && e.code == NSFileWriteNoPermissionError { return true }
+            if e.domain == NSPOSIXErrorDomain && (e.code == Int(EACCES) || e.code == Int(EPERM)) { return true }
+            current = e.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+        return false
     }
 
     static func trash(_ items: [CleanItem]) -> Result {
@@ -511,11 +541,13 @@ enum Trasher {
                                                       trashPath: (moved as URL?)?.path, size: item.size, state: .inTrash))
             } catch {
                 NSLog("Prune: could not trash \(item.url.path): \(error)")
-                let denied = (error as NSError).code == NSFileWriteNoPermissionError
+                // Permission denied: the caller retries this item with administrator rights (AdminTrash).
+                let denied = isPermissionDenied(error)
                 result.failures.append(Failure(name: item.name,
-                                               reason: error.localizedDescription,
-                                               hint: denied ? tr("Prune has no permission for this folder. Remove it by hand in Finder.") : nil,
-                                               id: item.id))
+                                               reason: denied ? tr("Needs an administrator to remove.") : error.localizedDescription,
+                                               hint: denied ? tr("Prune will ask for your administrator password to try again.") : nil,
+                                               id: item.id,
+                                               needsAdmin: denied))
             }
         }
         return result

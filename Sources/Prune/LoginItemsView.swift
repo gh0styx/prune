@@ -51,6 +51,11 @@ struct LoginItemsView: View {
             }
         }
         .task { await refresh() }
+        // Remove moves the plist to the Trash through the shared cleaner; reload the list once that finishes,
+        // so the row goes away right after Remove instead of at the next Refresh.
+        .onChange(of: store.isCleaning) { _, cleaning in
+            if !cleaning { Task { await refresh() } }
+        }
     }
 
     // MARK: Pieces

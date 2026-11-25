@@ -10,7 +10,52 @@ import Foundation
 ///   the Trash step, and their size is kept out of the reclaimable total.
 enum SystemData {
     static func scan() -> [CleanItem] {
-        snapshotItems() + groupContainerCaches() + appSupportCaches() + codeSignCloneItems() + reportOnlyItems()
+        // Simulator runtimes are removable when Xcode's simctl can list them; otherwise they stay report-only.
+        let runtimes = simulatorRuntimeItems()
+        return snapshotItems() + groupContainerCaches() + appSupportCaches() + codeSignCloneItems()
+            + runtimes + trashItems() + reportOnlyItems(hideSimulatorVolumes: !runtimes.isEmpty)
+    }
+
+    // MARK: Trash
+
+    /// The user's Trash as one removable row. Its size only comes back once the Trash is emptied, so the
+    /// row shows what Emptying would free. Finder empties it, so items that are still needed stay restorable
+    /// until the user confirms. Prune never deletes Trash files itself.
+    static func trashItems() -> [CleanItem] {
+        let trash = home.appending(path: ".Trash")
+        guard FileManager.default.fileExists(atPath: trash.path) else { return [] }
+        let m = Sizer.measure(trash)
+        let bytes = m.unique + m.shared
+        guard bytes > minimumBytes else { return [] }
+        return [CleanItem(
+            url: trash, category: .systemData, name: tr("Trash"), kind: "Trash",
+            location: tr("Empty with Finder. Space is freed only after emptying."),
+            size: bytes, lastActivity: nil, isStale: false,
+            command: ["/usr/bin/osascript", "-e", "tell application \"Finder\" to empty the trash"])]
+    }
+
+    // MARK: Simulator runtimes
+
+    /// Installed Xcode simulator runtimes from `xcrun simctl runtime list -j`. Each one is removed with
+    /// `xcrun simctl runtime delete <identifier>`, which Xcode can download again. Returns nothing when the
+    /// JSON is not in the expected shape, so the report-only row stays as the fallback.
+    static func simulatorRuntimeItems() -> [CleanItem] {
+        guard let out = Shell.run("/usr/bin/xcrun", ["simctl", "runtime", "list", "-j"], timeout: 30),
+              let data = out.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [] }
+        return json.compactMap { key, value -> CleanItem? in
+            guard let info = value as? [String: Any] else { return nil }
+            let identifier = (info["identifier"] as? String) ?? key
+            guard let bytes = (info["sizeBytes"] as? NSNumber)?.int64Value, bytes > minimumBytes else { return nil }
+            let name = (info["name"] as? String) ?? identifier
+            return CleanItem(
+                url: URL(fileURLWithPath: "/simulator-runtime/" + identifier), category: .systemData,
+                name: name, kind: "Simulator runtime",
+                location: tr("Removed with xcrun simctl. Xcode can download it again."),
+                size: bytes, lastActivity: nil, isStale: false,
+                command: ["/usr/bin/xcrun", "simctl", "runtime", "delete", identifier])
+        }
+        .sorted { $0.size > $1.size }
     }
 
     // MARK: Browser code-sign clones
@@ -114,11 +159,9 @@ enum SystemData {
     // MARK: Report only
 
     /// Big System Data pieces Prune shows but never removes. The hint says who owns the removal.
-    static func reportOnlyItems() -> [CleanItem] {
+    static func reportOnlyItems(hideSimulatorVolumes: Bool = false) -> [CleanItem] {
         let darwinCache = darwinDirectory("DARWIN_USER_CACHE_DIR")
         let darwinTemp = darwinDirectory("DARWIN_USER_TEMP_DIR")
-        // /private/var/folders/xx/yyyy/ holds C (caches), T (temp) and X, where browsers leave code-sign clones.
-        let darwinRoot = darwinCache.map { URL(fileURLWithPath: $0).deletingLastPathComponent().path }
         let places: [(path: String?, name: String, kind: String, hint: String)] = [
             (home.appending(path: "Library/Containers/com.docker.docker").path, "Docker Desktop disk", "VM disk",
              "Clean inside Docker Desktop (Troubleshoot)"),
@@ -143,6 +186,7 @@ enum SystemData {
              "Temporary files of running apps. Prune does not remove them."),
         ]
         return places.compactMap { place -> CleanItem? in
+            if hideSimulatorVolumes, place.name == "Simulator runtimes" { return nil }
             guard let path = place.path, FileManager.default.fileExists(atPath: path) else { return nil }
             let item = measured(URL(fileURLWithPath: path), name: place.name, kind: place.kind,
                                 location: Fmt.tilde(path) + " · " + place.hint, reportOnly: true)
