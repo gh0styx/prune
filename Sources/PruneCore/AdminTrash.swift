@@ -25,29 +25,84 @@ enum AdminTrash {
     static func trash(_ items: [CleanItem]) -> Outcome {
         var outcome = Outcome()
         guard !items.isEmpty else { return outcome }
-        outcome.moved = trashWithFinder(items)
+        let result = trashWithFinder(items)
+        outcome.moved = result.moved
         for item in items where outcome.moved[item.id] == nil {
-            outcome.failed[item.id] = tr("macOS protects this app's data, so even an administrator can't move it.")
+            if result.cancelled.contains(item.id) {
+                outcome.cancelled = true
+                outcome.failed[item.id] = tr("Administrator access was not granted.")
+            } else if let reason = result.errors[item.id], reason.localizedCaseInsensitiveContains("not permitted") {
+                outcome.failed[item.id] = tr("macOS protects this app's data, so even an administrator can't move it.")
+            } else {
+                outcome.failed[item.id] = result.errors[item.id] ?? tr("Not removed")
+            }
         }
         return outcome
     }
 
-    /// One item at a time, so a refusal for one does not hide the others. Waits for Finder's answer.
-    private static func trashWithFinder(_ items: [CleanItem]) -> [String: URL] {
+    /// One item at a time, so a refusal for one does not hide the others. Asks Finder to delete each item (an Apple
+    /// event, the same as "Move to Trash" in Finder), so macOS treats it as Finder's operation, not Prune's.
+    private static func trashWithFinder(_ items: [CleanItem]) -> (moved: [String: URL], errors: [String: String], cancelled: Set<String>) {
         var moved: [String: URL] = [:]
-        for item in items {
-            let done = DispatchSemaphore(value: 0)
-            var newURL: URL?
-            DispatchQueue.main.async {
-                NSWorkspace.shared.recycle([item.url]) { result, _ in
-                    newURL = result[item.url]
-                    done.signal()
-                }
-            }
-            _ = done.wait(timeout: .now() + 300)
-            if let newURL { moved[item.id] = newURL }
+        var errors: [String: String] = [:]
+        var cancelled = Set<String>()
+        let trashDir = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".Trash")
+        var permission: String?
+        DispatchQueue.main.sync { permission = finderAutomationProblem() }
+        if let permission {
+            for item in items { errors[item.id] = permission }
+            return (moved, errors, cancelled)
         }
-        return moved
+        for item in items {
+            let outcome = deleteViaFinder(item.url)
+            if outcome.ok {
+                let name = item.url.lastPathComponent
+                let inTrash = trashDir.appending(path: name)
+                moved[item.id] = FileManager.default.fileExists(atPath: inTrash.path) ? inTrash : trashDir
+            } else if outcome.cancelled {
+                cancelled.insert(item.id)
+            } else {
+                errors[item.id] = outcome.message
+            }
+        }
+        return (moved, errors, cancelled)
+    }
+
+    /// Asks macOS for permission to control Finder (Automation), showing its prompt the first time.
+    /// Returns nil when allowed, otherwise the reason to show.
+    static func finderAutomationProblem() -> String? {
+        let finder = NSAppleEventDescriptor(bundleIdentifier: "com.apple.finder")
+        let status = AEDeterminePermissionToAutomateTarget(finder.aeDesc, 0x2A2A2A2A, 0x2A2A2A2A, true)
+        if status == noErr { return nil }
+        return tr("Prune isn't allowed to control Finder. Turn it on in System Settings → Privacy & Security → Automation.")
+    }
+
+    /// `tell application "Finder" to delete POSIX file …` on the main thread (AppleScript needs it).
+    private static func deleteViaFinder(_ url: URL) -> (ok: Bool, cancelled: Bool, message: String) {
+        let escaped = url.path
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        let source = "tell application \"Finder\" to delete POSIX file \"\(escaped)\""
+        var result: (Bool, Bool, String) = (false, false, tr("Not removed"))
+        let done = DispatchSemaphore(value: 0)
+        DispatchQueue.main.async {
+            var info: NSDictionary?
+            guard let script = NSAppleScript(source: source) else {
+                done.signal()
+                return
+            }
+            _ = script.executeAndReturnError(&info)
+            if let info {
+                let code = (info[NSAppleScript.errorNumber] as? Int) ?? 0
+                let message = (info[NSAppleScript.errorMessage] as? String) ?? tr("Not removed")
+                result = (false, code == -128, message)
+            } else {
+                result = (true, false, "")
+            }
+            done.signal()
+        }
+        _ = done.wait(timeout: .now() + 300)
+        return (result.0, result.1, result.2)
     }
 }
 
