@@ -342,11 +342,8 @@ enum FullDiskAccess {
         return (try? FileManager.default.contentsOfDirectory(atPath: url.path)) != nil
     }
 
-    static func openSettings() {
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
-            NSWorkspace.shared.open(url)
-        }
-    }
+    /// Opens the pane with a card to drag Prune into the list.
+    @MainActor static func openSettings() { PermissionHelper.open(.fullDiskAccess) }
 }
 
 /// Shown until the user asks for a disk map.

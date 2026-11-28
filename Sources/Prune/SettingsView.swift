@@ -3,11 +3,12 @@ import ServiceManagement
 
 struct SettingsView: View {
     enum Page: String, CaseIterable, Identifiable {
-        case general = "General", scanning = "Scanning", permissions = "Permissions", about = "About"
+        case general = "General", menuBar = "Menu bar", scanning = "Scanning", permissions = "Permissions", about = "About"
         var id: String { rawValue }
         var symbol: String {
             switch self {
             case .general: "gearshape"
+            case .menuBar: "menubar.rectangle"
             case .scanning: "magnifyingglass"
             case .permissions: "lock.shield"
             case .about: "info.circle"
@@ -34,7 +35,7 @@ struct SettingsView: View {
                 Spacer()
             }
             .padding(.horizontal, 8)
-            .frame(width: Sidebar.width)
+            .frame(width: Self.sidebarWidth)
             .frame(maxHeight: .infinity)
             // The same glass as the main window's sidebar.
             .background(SidebarGlass().ignoresSafeArea())
@@ -49,13 +50,14 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.text)
                     switch page {
                     case .general: GeneralSettings()
+                    case .menuBar: MenuBarSettings()
                     case .scanning: ScanningSettings()
                     case .permissions: PermissionSettings()
                     case .about: AboutSettings()
                     }
                 }
                 .frame(maxWidth: 560, alignment: .leading)
-                .padding(.horizontal, 36)
+                .padding(.horizontal, page == .menuBar ? 28 : 36)
                 .padding(.top, 44)
                 .padding(.bottom, 36)
                 .frame(maxWidth: .infinity)
@@ -64,9 +66,27 @@ struct SettingsView: View {
             }
             .scrollIndicators(.never)
             .background(Theme.bg)
+
+            if page == .menuBar {
+                Rectangle().fill(Theme.text.opacity(0.08)).frame(width: 1).ignoresSafeArea()
+                ScrollView {
+                    MenuBarPreview()
+                        .padding(.horizontal, 16)
+                        .padding(.top, 44)
+                        .padding(.bottom, 24)
+                }
+                .scrollIndicators(.never)
+                .frame(width: 240)
+                .background(Theme.bg)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
         }
         .animation(.easeOut(duration: 0.15), value: page)
         .ignoresSafeArea()
-        .frame(width: 820, height: 600)
+        // One fixed size for every page: resizing the window per page left SwiftUI content shifted and clipped.
+        .frame(width: 840, height: 600)
     }
+
+    /// Narrower than the main window's sidebar: Settings has only a few short pages.
+    static let sidebarWidth: CGFloat = 200
 }

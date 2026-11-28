@@ -18,6 +18,20 @@ enum Prefs {
         static let schedule = "schedule"          // "off" | "daily" | "weekly"
         static let lastScheduledScan = "lastScheduledScan"
         static let lastLowDiskAlert = "lastLowDiskAlert"
+        // Menu bar panel: what it shows.
+        static let menuCPU = "menu.cpu"
+        static let menuRAM = "menu.ram"
+        static let menuDisk = "menu.disk"
+        static let menuReclaimable = "menu.reclaimable"
+        static let menuSelected = "menu.selected"
+        static let menuLastScan = "menu.lastScan"
+        static let menuExtraTile = "menu.extraTile"   // Dev servers in developer mode, Large files otherwise
+        static let menuCategories = "menu.categories"
+        static let menuKeepAwake = "menu.keepAwake"
+        static let menuKeyboard = "menu.keyboard"
+        static let menuMemory = "menu.memory"
+        static let menuTrash = "menu.trash"
+        static let menuEject = "menu.eject"
     }
 
     private static var d: UserDefaults { .standard }

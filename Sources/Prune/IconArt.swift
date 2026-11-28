@@ -116,6 +116,23 @@ enum IconArt {
         }
     }
 
+    /// The menu bar glyph with a small cup next to it, shown while Keep awake is on.
+    static let menuBarGlyphAwake: NSImage = {
+        let cup = NSImage(systemSymbolName: "cup.and.saucer.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 10, weight: .semibold))
+        let img = NSImage(size: NSSize(width: 31, height: 18), flipped: false) { _ in
+            menuBarGlyph.draw(in: NSRect(x: 0, y: 0, width: 18, height: 18))
+            if let cup {
+                let s = cup.size
+                cup.draw(in: NSRect(x: 31 - s.width, y: (18 - s.height) / 2, width: s.width, height: s.height))
+            }
+            return true
+        }
+        img.isTemplate = true
+        img.accessibilityDescription = "Prune"
+        return img
+    }()
+
     /// 18pt template glyph for the menu bar: the bitten orb and its dot.
     static let menuBarGlyph: NSImage = {
         let img = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in

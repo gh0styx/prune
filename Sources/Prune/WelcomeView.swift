@@ -256,7 +256,7 @@ private struct Permissions: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 26) {
             StepTitle(eyebrow: "Permissions", title: "Let Prune see the whole disk",
-                      text: "macOS hides some folders from apps. Full Disk Access gives Prune a complete map. It is optional, and you can change it later.")
+                      text: "macOS hides some folders from apps. Prune needs Full Disk Access to scan, so the results are complete.")
             VStack(spacing: 0) {
                 HStack(spacing: 14) {
                     IconTile(symbol: "lock.shield", color: granted ? Theme.green : Theme.amber, size: 36)

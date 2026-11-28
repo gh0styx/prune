@@ -6,10 +6,8 @@ enum GatedAction { case scan, map }
 /// Everything the scans need from macOS. Full Disk Access also covers Documents, Desktop,
 /// Downloads, Mail and Messages, so it is the only one to check.
 enum AppPermissions {
-    /// Set when the user chooses "Scan anyway" in the gate. Lasts until the app quits, so the gate
-    /// shows again on the next launch and results from this run are not mistaken for complete ones.
-    static var scanAnyway = false
-    static var allGranted: Bool { FullDiskAccess.granted || scanAnyway }
+    /// Scans don't start without Full Disk Access: results without it would be silently incomplete.
+    static var allGranted: Bool { FullDiskAccess.granted }
     static var fullDiskAccessMissing: Bool { !FullDiskAccess.granted }
 }
 
@@ -25,7 +23,7 @@ struct PermissionGate: View {
                 Text("Allow Prune to see your disk")
                     .font(Theme.sans(17, .semibold))
                     .foregroundStyle(Theme.text)
-                Text("A scan needs Full Disk Access. Without it macOS hides Mail, Messages, Safari data and some caches. You can scan anyway, and the results will say they are incomplete.")
+                Text("A scan needs Full Disk Access. Without it macOS hides Mail, Messages, Safari data and some caches, and the results would be incomplete.")
                     .font(Theme.sans(13))
                     .foregroundStyle(Theme.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -62,11 +60,6 @@ struct PermissionGate: View {
                         .buttonStyle(.primary)
                         .keyboardShortcut(.defaultAction)
                 } else {
-                    Button("Scan anyway") {
-                        AppPermissions.scanAnyway = true
-                        store.resumeGatedAction()
-                    }
-                    .buttonStyle(.secondary)
                     Button("Check again") { recheck() }
                         .buttonStyle(.secondary)
                     Button("Open Settings") { FullDiskAccess.openSettings() }

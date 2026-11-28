@@ -11,7 +11,6 @@ struct GeneralSettings: View {
     @AppStorage(Prefs.Key.schedule) private var schedule = "weekly"
     @Environment(Store.self) private var store
     @AppStorage(Prefs.Key.appearance) private var appearance = "dark"
-    @AppStorage(Prefs.Key.showMenuBar) private var showMenuBar = true
     @AppStorage(Prefs.Key.scanOnLaunch) private var scanOnLaunch = false
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
@@ -38,9 +37,6 @@ struct GeneralSettings: View {
                 }
             }
             .padding(.vertical, 12)
-            SettingRow(title: "Show in menu bar", detail: "Reclaimable space and quick clean, one click away.") {
-                Switch(isOn: $showMenuBar)
-            }
         }
         SettingsGroup(title: "Mode") {
             SettingRow(title: "Developer mode",
@@ -161,7 +157,7 @@ struct PermissionSettings: View {
             SettingRow(title: "App Management",
                        detail: "Lets Prune move protected apps and app data. Finder does this with Touch ID, so this is usually not needed.") {
                 Button("Open Settings") {
-                    if let url = URL(string: AppPermissionLinks.appManagement) { NSWorkspace.shared.open(url) }
+                    PermissionHelper.open(.appManagement)
                 }
                 .buttonStyle(.secondary)
             }
@@ -297,6 +293,100 @@ private struct ThemeCard: View {
             .padding(7)
             .frame(width: 80, height: 76, alignment: .topLeading)
             .background(bg)
+        }
+    }
+}
+
+// MARK: Menu bar
+
+/// What the menu bar panel shows, with a live preview of the real panel next to the switches.
+struct MenuBarSettings: View {
+    @Environment(Store.self) private var store
+    @AppStorage(Prefs.Key.showMenuBar) private var showMenuBar = true
+    @AppStorage(Prefs.Key.menuCPU) private var menuCPU = true
+    @AppStorage(Prefs.Key.menuRAM) private var menuRAM = true
+    @AppStorage(Prefs.Key.menuDisk) private var menuDisk = true
+    @AppStorage(Prefs.Key.menuReclaimable) private var menuReclaimable = true
+    @AppStorage(Prefs.Key.menuSelected) private var menuSelected = true
+    @AppStorage(Prefs.Key.menuLastScan) private var menuLastScan = true
+    @AppStorage(Prefs.Key.menuExtraTile) private var menuExtraTile = true
+    @AppStorage(Prefs.Key.menuCategories) private var menuCategories = true
+    @AppStorage(Prefs.Key.menuKeepAwake) private var menuKeepAwake = true
+    @AppStorage(Prefs.Key.menuKeyboard) private var menuKeyboard = true
+    @AppStorage(Prefs.Key.menuMemory) private var menuMemory = true
+    @AppStorage(Prefs.Key.menuTrash) private var menuTrash = true
+    @AppStorage(Prefs.Key.menuEject) private var menuEject = true
+
+    var body: some View {
+        SettingsGroup(title: "Panel") {
+            SettingRow(title: "Show in menu bar", detail: "Reclaimable space and quick clean, one click away.") {
+                Switch(isOn: $showMenuBar)
+            }
+        }
+        SettingsGroup(title: "Rings") {
+            SettingRow(title: "CPU", detail: "Processor load, updated every 2 seconds while the panel is open.") {
+                Switch(isOn: $menuCPU)
+            }
+            SettingRow(title: "Memory", detail: "Memory in use, counted the way Activity Monitor does.") {
+                Switch(isOn: $menuRAM)
+            }
+            SettingRow(title: "Disk", detail: "Startup disk space. Shown as one large gauge when the other rings are off.") {
+                Switch(isOn: $menuDisk)
+            }
+        }
+        SettingsGroup(title: "Summary") {
+            SettingRow(title: "Reclaimable") { Switch(isOn: $menuReclaimable) }
+            SettingRow(title: "Selected") { Switch(isOn: $menuSelected) }
+            SettingRow(title: "Last scan date") { Switch(isOn: $menuLastScan) }
+            SettingRow(title: store.developerMode ? "Dev servers" : "Large files") { Switch(isOn: $menuExtraTile) }
+            SettingRow(title: "Categories", detail: "The five largest categories after a scan.") {
+                Switch(isOn: $menuCategories)
+            }
+        }
+        SettingsGroup(title: "Quick tools") {
+            SettingRow(title: "Keep awake", detail: "Stops the Mac and display from sleeping, with an optional timer.") {
+                Switch(isOn: $menuKeepAwake)
+            }
+            SettingRow(title: "Keyboard", detail: "Locks the keyboard while you wipe it. Needs Accessibility access.") {
+                Switch(isOn: $menuKeyboard)
+            }
+            SettingRow(title: "Memory", detail: "Releases memory macOS is holding in its disk cache.") {
+                Switch(isOn: $menuMemory)
+            }
+            SettingRow(title: "Trash", detail: "Shows the Trash size and empties it after you confirm.") {
+                Switch(isOn: $menuTrash)
+            }
+            SettingRow(title: "Disks", detail: "Ejects every external disk at once. Shown only when one is connected.") {
+                Switch(isOn: $menuEject)
+            }
+        }
+    }
+}
+
+/// The real menu bar panel, scaled down and not clickable, so changes in Settings show up right away.
+struct MenuBarPreview: View {
+    @AppStorage(Prefs.Key.showMenuBar) private var showMenuBar = true
+    var scale: CGFloat = 0.65
+    @State private var size = CGSize(width: 320, height: 400)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(tr("Preview").uppercased())
+                .font(Theme.sans(10.5, .semibold)).tracking(0.6).foregroundStyle(Theme.faint)
+            MenuBarView()
+                .fixedSize()
+                .onGeometryChange(for: CGSize.self, of: { $0.size }) { size = $0 }
+                .background(Theme.bg, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Theme.border))
+                .scaleEffect(scale, anchor: .topLeading)
+                .frame(width: size.width * scale, height: size.height * scale, alignment: .topLeading)
+                .allowsHitTesting(false)
+                .opacity(showMenuBar ? 1 : 0.35)
+                .animation(.snappy, value: size)
+            if !showMenuBar {
+                Text("Hidden from the menu bar.")
+                    .font(Theme.sans(11.5)).foregroundStyle(Theme.muted)
+            }
         }
     }
 }

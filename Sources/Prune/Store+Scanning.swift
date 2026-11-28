@@ -26,8 +26,9 @@ extension Store {
     /// One scan: junk categories first (seconds), then the disk map when it is enabled or already exists.
     func scan(scheduled: Bool = false) {
         guard !isScanning else { return }
-        // Manual scans wait for the permissions they need; scheduled ones just run with what they have.
-        if !scheduled, !requirePermissions(for: .scan) { return }
+        // Manual scans wait for the permissions they need; scheduled ones are skipped until access is granted.
+        if scheduled { guard AppPermissions.allGranted else { return } }
+        else if !requirePermissions(for: .scan) { return }
         scheduledRun = scheduled
         if !scheduled {
             // A manual scan restarts the schedule clock and is the moment to ask for notifications.

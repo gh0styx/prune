@@ -120,7 +120,7 @@ struct MenuBarLabel: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Image(nsImage: IconArt.menuBarGlyph)
+        Image(nsImage: KeepAwake.shared.isOn ? IconArt.menuBarGlyphAwake : IconArt.menuBarGlyph)
             .task {
                 store.openMainWindow = { [openWindow] in
                     openWindow(id: "main")

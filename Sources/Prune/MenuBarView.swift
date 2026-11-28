@@ -5,6 +5,15 @@ struct MenuBarView: View {
     @Environment(Store.self) private var store
     @Environment(\.openWindow) private var openWindow
     @State private var servers: [DevServer] = []
+    @State private var stats = SystemStats.shared
+    @AppStorage(Prefs.Key.menuCPU) private var showCPU = true
+    @AppStorage(Prefs.Key.menuRAM) private var showRAM = true
+    @AppStorage(Prefs.Key.menuDisk) private var showDisk = true
+    @AppStorage(Prefs.Key.menuReclaimable) private var showReclaimable = true
+    @AppStorage(Prefs.Key.menuSelected) private var showSelected = true
+    @AppStorage(Prefs.Key.menuLastScan) private var showLastScan = true
+    @AppStorage(Prefs.Key.menuExtraTile) private var showExtraTile = true
+    @AppStorage(Prefs.Key.menuCategories) private var showCategories = true
 
     private func open(_ route: Route? = nil) {
         if let route { store.route = route }
@@ -16,44 +25,26 @@ struct MenuBarView: View {
         let shown = store.junkCategories.filter { store.size($0) > 0 || store.pending.contains($0) }
 
         VStack(spacing: 0) {
-            // Disk gauge + mini stats, like a small Overview.
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle().stroke(Theme.text.opacity(0.08), lineWidth: 6)
-                    Circle()
-                        .trim(from: 0, to: store.disk.usedFraction)
-                        .stroke(AngularGradient(colors: [Theme.blue, Theme.teal], center: .center),
-                                style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                    VStack(spacing: 0) {
-                        Text("\(Int((store.disk.usedFraction * 100).rounded()))%")
-                            .font(Theme.sans(15, .semibold)).monospacedDigit().foregroundStyle(Theme.text)
-                        Text("used").font(Theme.sans(9.5)).foregroundStyle(.secondary)
-                    }
-                }
-                .frame(width: 64, height: 64)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(store.volumes.first?.name ?? "Macintosh HD")
-                        .font(Theme.sans(14, .semibold)).foregroundStyle(Theme.text)
-                    Text(trf("%@ free of %@", Fmt.bytes(store.disk.free), Fmt.bytes(store.disk.total)))
-                        .font(Theme.sans(12)).foregroundStyle(.secondary)
-                    status.padding(.top, 2)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 12)
+            // Rings when CPU or memory is on; the single big disk gauge when only the disk is.
+            if showCPU || showRAM { ringsHeader } else if showDisk { diskHeader } else { Color.clear.frame(height: 12) }
 
+            if showReclaimable || showSelected || showLastScan || showExtraTile {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+                if showReclaimable {
                 StatTile(symbol: "sparkles", color: Theme.green, label: "Reclaimable",
                          value: store.hasScanned || store.isScanning ? Fmt.bytes(store.reclaimable) : tr("Not scanned"),
                          dim: !(store.hasScanned || store.isScanning))
+                }
+                if showSelected {
                 StatTile(symbol: "checkmark.circle", color: Theme.blue, label: "Selected",
                          value: store.hasScanned ? Fmt.bytes(store.selectedSize) : "—", dim: !store.hasScanned)
+                }
+                if showLastScan {
                 StatTile(symbol: "clock", color: Theme.violet, label: "Last scan",
                          value: store.lastScan.map { Fmt.relative($0) } ?? tr("Never"), dim: store.lastScan == nil)
-                if store.developerMode {
+                }
+                if !showExtraTile {
+                } else if store.developerMode {
                     StatTile(symbol: "network", color: Theme.amber, label: "Dev servers",
                              value: servers.isEmpty ? "0" : trf("%lld · %@", servers.count,
                                                                 Fmt.bytes(servers.reduce(0) { $0 + $1.memoryBytes })),
@@ -65,9 +56,14 @@ struct MenuBarView: View {
                 }
             }
             .padding(.horizontal, 12)
+            .padding(.bottom, 8)
             .animation(.snappy, value: store.reclaimable)
+            }
+
+            QuickToolsGrid()
 
             // Categories after a scan, or a clear call to action before the first one.
+            if showCategories {
             Group {
                 if shown.isEmpty {
                     HStack(spacing: 12) {
@@ -118,6 +114,7 @@ struct MenuBarView: View {
                     .padding(.top, 12)
                 }
             }
+            }
 
             // Main action.
             Group {
@@ -158,6 +155,62 @@ struct MenuBarView: View {
             guard store.developerMode else { return }
             servers = await Task.detached { DevServerScanner.scan().filter(\.isLikelyDevServer) }.value
         }
+    }
+
+    /// The original header: one big disk gauge with the volume name and free space.
+    private var diskHeader: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle().stroke(Theme.text.opacity(0.08), lineWidth: 6)
+                Circle()
+                    .trim(from: 0, to: store.disk.usedFraction)
+                    .stroke(AngularGradient(colors: [Theme.blue, Theme.teal], center: .center),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                VStack(spacing: 0) {
+                    Text("\(Int((store.disk.usedFraction * 100).rounded()))%")
+                        .font(Theme.sans(15, .semibold)).monospacedDigit().foregroundStyle(Theme.text)
+                    Text("used").font(Theme.sans(9.5)).foregroundStyle(.secondary)
+                }
+            }
+            .frame(width: 64, height: 64)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(store.volumes.first?.name ?? "Macintosh HD")
+                    .font(Theme.sans(14, .semibold)).foregroundStyle(Theme.text)
+                Text(trf("%@ free of %@", Fmt.bytes(store.disk.free), Fmt.bytes(store.disk.total)))
+                    .font(Theme.sans(12)).foregroundStyle(.secondary)
+                status.padding(.top, 2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .padding(.bottom, 12)
+    }
+
+    /// CPU, memory and disk rings, with the disk's free space under them.
+    private var ringsHeader: some View {
+        VStack(spacing: 8) {
+            HStack(alignment: .top, spacing: 0) {
+                if showCPU {
+                    UsageRing(symbol: "cpu", label: "CPU", fraction: stats.cpu, color: Theme.blue,
+                              value: trf("%lld cores", ProcessInfo.processInfo.activeProcessorCount))
+                }
+                if showRAM {
+                    UsageRing(symbol: "memorychip", label: "Memory", fraction: stats.memoryFraction, color: Theme.violet,
+                              value: Fmt.memory(stats.memoryUsed))
+                }
+                if showDisk {
+                UsageRing(symbol: "internaldrive", label: store.volumes.first?.name ?? "Disk", fraction: store.disk.usedFraction, color: Theme.teal,
+                          value: trf("%@ free", Fmt.bytes(store.disk.free)))
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 16)
+        .padding(.bottom, 12)
+        .onAppear { stats.startWatching() }
+        .onDisappear { stats.stopWatching() }
     }
 
     @ViewBuilder private var status: some View {
