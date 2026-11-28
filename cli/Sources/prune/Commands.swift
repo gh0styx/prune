@@ -118,7 +118,10 @@ enum Commands {
     // MARK: analyze
 
     static func analyze(_ o: Options) {
-        let raw = (o.path ?? "~") as NSString
+        // The folder can be given as `--path DIR` or as a plain argument: `prune analyze ~/Downloads`.
+        if o.path != nil, !o.names.isEmpty { fail("give the folder once: either --path DIR or a plain PATH") }
+        if o.names.count > 1 { fail("analyze takes one folder, got \(o.names.count): \(o.names.joined(separator: " "))") }
+        let raw = (o.path ?? o.names.first ?? "~") as NSString
         let root = URL(fileURLWithPath: raw.expandingTildeInPath).standardizedFileURL
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: root.path, isDirectory: &isDir), isDir.boolValue else {

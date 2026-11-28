@@ -6,7 +6,7 @@ class Prune < Formula
   homepage "https://prune.gh0styx.com"
   url "https://github.com/gh0styx/prune/archive/refs/tags/cli-v0.1.0.tar.gz"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000"
-  license "GPL-3.0-only"
+  license "MIT"
 
   depends_on xcode: ["16.0", :build]
   depends_on macos: :ventura
